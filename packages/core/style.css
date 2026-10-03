@@ -26,3 +26,13 @@
 .duckposting #connection summary::-webkit-details-marker { display: none; }
 .duckposting #connection summary:focus-visible { outline: 2px solid var(--secondary, #36c); outline-offset: 3px; }
 .duckposting .duck-connection { position: absolute; top: 100%; left: 0; z-index: 5; margin-top: .5rem; padding: .8rem; box-sizing: border-box; width: min(22rem, calc(100vw - 7rem)); border: 1px solid var(--lightgray, #ddd); background: var(--light, #fff); border-radius: .25rem; }
+.duckposting .duck-entry { display: flex; align-items: center; gap: .5rem; padding: 1rem 0; border-bottom: 1px solid var(--lightgray, #ddd); }
+.duckposting .duck-entry > div { flex: 1; min-width: 0; }
+.duckposting .duck-entry small { display: block; opacity: .65; overflow-wrap: anywhere; font: 12px/1.6 system-ui, sans-serif; }
+.duckposting .duck-settings { margin: 1rem 0 2rem; font: 14px/1.5 system-ui, sans-serif; }
+.duckposting .duck-settings h2 { font: inherit; font-weight: 600; margin: 0 0 .5rem; }
+.duckposting .duck-settings label { display: block; margin: .5rem 0; }
+.duckposting #frontmatter { min-height: 6rem; }
+.duckposting dialog { color: inherit; background: var(--light, #fff); border: 1px solid var(--lightgray, #ddd); border-radius: .5rem; padding: 1.5rem; max-width: min(32rem, calc(100vw - 4rem)); }
+.duckposting dialog::backdrop { background: #0006; }
+@media (max-width: 480px) { .duckposting .duck-entry { flex-wrap: wrap; } .duckposting .duck-entry > div { flex-basis: 100%; } }

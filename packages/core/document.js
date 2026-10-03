@@ -43,3 +43,15 @@ export function setTitle(text, title) {
     ? frontmatter.replace(/^title:.*$/m, () => line)
     : frontmatter.replace(/^(---\r?\n)/, `$1${line}\n`)) + body;
 }
+
+export function isDraft(text) {
+  return /^draft:[ \t]*(?:true|["']true["'])[ \t]*(?:#.*)?$/m.test(splitDocument(text).frontmatter);
+}
+
+export function setDraft(text, draft) {
+  const { frontmatter, body } = splitDocument(text);
+  const line = `draft: ${draft}`;
+  if (!frontmatter) return `---\n${line}\n---\n\n${body}`;
+  return (/^draft:/m.test(frontmatter) ? frontmatter.replace(/^draft:.*$/m, line)
+    : frontmatter.replace(/^(---\r?\n)/, `$1${line}\n`)) + body;
+}

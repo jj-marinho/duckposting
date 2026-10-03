@@ -35,7 +35,16 @@ creates `write/index.html` and copies `editor.js` and `editor.css` into the
 build output. The browser bundle loads only on the writing page, and is served
 from the blog itself. No external CDN hosts editor code.
 
-Options: `repository`, `branch` (main), `contentDir` (content/posts), `template`.
+Options: `repository`, `branch` (main), `contentRoot` (content),
+`contentDir` (content/posts), `exclude` (private, templates, .obsidian), `template`.
+`exclude` is a list of literal folder/file names, not glob patterns; configure it
+alongside your Quartz ignore rules if you change them.
+
+The adapter emits `duckposting/content.json` from Quartz's filtered content.
+It includes only published file paths and titles. Draft discovery uses GitHub's
+authenticated tree listing; draft text is fetched only when opened. Keep Quartz's
+RemoveDraft filter enabled so `draft: true` remains hidden. Publish creates or
+updates one Markdown file, and Delete removes one with confirmation.
 The default template contains title, today's date and `draft: false`.
 The third function argument changes the source assets directory (duckposting).
 
