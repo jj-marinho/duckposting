@@ -1,0 +1,21 @@
+.duckposting [hidden] { display: none !important; }
+.duckposting #title { outline: none; min-height: 1.2em; white-space: pre-wrap; }
+.duckposting #title:empty::before { content: attr(data-placeholder); opacity: .4; }
+.duckposting #body { min-height: 45vh; cursor: text; }
+.duckposting #body .ProseMirror { outline: none; }
+.duckposting #body:has(.ProseMirror > p:only-child > br:only-child)::before { content: "Start writing…"; opacity: .4; pointer-events: none; position: absolute; }
+.duckposting .duck-toolbar, .duckposting .duck-controls { font: 14px/1.5 system-ui, sans-serif; }
+.duckposting .duck-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; margin: 1rem 0; }
+.duckposting .duck-hint { opacity: .6; }
+.duckposting button, .duckposting input, .duckposting textarea { font: inherit; color: inherit; }
+.duckposting button { padding: .3rem .7rem; background: transparent; border: 1px solid var(--lightgray, #ddd); border-radius: .25rem; cursor: pointer; }
+.duckposting button:hover { border-color: currentColor; }
+.duckposting button:disabled { opacity: .5; cursor: wait; }
+.duckposting button:focus-visible, .duckposting input:focus-visible, .duckposting textarea:focus-visible, .duckposting #title:focus-visible { outline: 2px solid var(--secondary, #36c); outline-offset: 3px; }
+.duckposting .duck-controls { margin: 2rem 0; }
+.duckposting details { margin: 1rem 0; }
+.duckposting summary { cursor: pointer; }
+.duckposting textarea, .duckposting input[type="password"] { display: block; box-sizing: border-box; width: 100%; padding: .7rem; border: 1px solid var(--lightgray, #ddd); background: var(--light, #fff); }
+.duckposting textarea { font-family: var(--codeFont, monospace); resize: vertical; min-height: 8rem; }
+.duckposting #post { min-height: 50vh; }
+.duckposting #status { overflow-wrap: anywhere; }

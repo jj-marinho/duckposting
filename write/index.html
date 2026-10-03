@@ -2,197 +2,21 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Write · Duck</title>
+<title>Write · duckposting</title>
+<link rel="stylesheet" href="./editor.css">
 <style>
-  body { max-width: 44rem; margin: 2rem auto; padding: 0 1rem; font: 16px/1.6 system-ui, sans-serif; color: #222; }
-  h1 { margin-bottom: 0; }
-  textarea { display: block; box-sizing: border-box; width: 100%; min-height: 60vh; padding: 1rem; resize: vertical; font: inherit; }
-  button, input { font: inherit; }
-  button { padding: .3rem .8rem; cursor: pointer; }
-  details { margin: 1rem 0; }
-  input[type="password"] { box-sizing: border-box; width: 100%; }
-  #status, #storage-warning { overflow-wrap: anywhere; }
+  body { max-width: 44rem; margin: 2rem auto; padding: 0 1rem; color: #222; font: 18px/1.7 Georgia, serif; }
+  h1, h2, h3 { line-height: 1.2; }
+  a { color: #3656a3; }
 </style>
-<h1>Duck</h1>
-<p>Write Markdown. Sync saves a new post to GitHub.</p>
-<label for="post">New post</label>
-<textarea id="post" spellcheck="true" aria-describedby="status"></textarea>
-<details id="connection">
-  <summary>GitHub connection</summary>
-  <label for="token">Personal access token</label>
-  <input id="token" type="password" autocomplete="off" spellcheck="false">
-  <label><input id="remember" type="checkbox"> Remember on this device</label>
-  <button id="forget" type="button">Forget</button>
-</details>
-<button id="sync" type="button">Sync</button>
-<p id="status" role="status" aria-live="polite"></p>
-<p id="storage-warning" role="status" hidden>Local saving is unavailable. Keep this tab open to preserve your draft.</p>
-<script>
-  // Edit these values in your blog repository. Never put a token here.
-  const config = {
+<main id="writer">Loading duckposting…</main>
+<script type="module">
+  import { mountDuckposting } from "./editor.js";
+  await mountDuckposting(document.querySelector("#writer"), {
     repository: "YOUR-USERNAME/YOUR-BLOG",
     branch: "main",
     contentDir: "content/posts",
-    template: "---\ntitle: \"\"\ndate: {{date}}\n---\n\n",
-  };
-
-  const post = document.querySelector("#post");
-  const token = document.querySelector("#token");
-  const remember = document.querySelector("#remember");
-  const sync = document.querySelector("#sync");
-  const status = document.querySelector("#status");
-  const namespace = `duck:${config.repository}:${config.branch}:${config.contentDir}:`;
-
-  function storage(key, value) {
-    try {
-      if (value === undefined) return localStorage.getItem(namespace + key);
-      if (value === null) localStorage.removeItem(namespace + key);
-      else localStorage.setItem(namespace + key, value);
-    } catch {
-      document.querySelector("#storage-warning").hidden = false;
-    }
-  }
-
-  function newPost() {
-    const now = new Date();
-    const date = [now.getFullYear(), now.getMonth() + 1, now.getDate()]
-      .map(part => String(part).padStart(2, "0")).join("-");
-    return config.template.replaceAll("{{date}}", date);
-  }
-
-  function filename(text) {
-    const frontmatter = text.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/)?.[1];
-    let title = frontmatter?.match(/^title:[ \t]*(.*)$/m)?.[1].trim() || "";
-    try {
-      if (title.startsWith('"')) {
-        const quoted = title.match(/^("(?:[^"\\]|\\.)*")[ \t]*(?:#.*)?$/)?.[1];
-        title = JSON.parse(quoted);
-      } else if (title.startsWith("'")) {
-        const quoted = title.match(/^'((?:[^']|'')*)'[ \t]*(?:#.*)?$/);
-        if (!quoted) throw new Error();
-        title = quoted[1].replace(/''/g, "'");
-      } else {
-        title = title.replace(/[ \t]+#.*/, "");
-        if (/^[!&*|>\[\]{}%@`]|:[ \t]|^(?:null|~)$/i.test(title)) throw new Error();
-      }
-    } catch {
-      throw new Error('Use a single-line frontmatter title, such as title: "Your title".');
-    }
-    const slug = title.normalize("NFKD").toLowerCase().replace(/\p{M}/gu, "")
-      .replace(/['’]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-    if (!slug) throw new Error('Add a frontmatter title: "Your title" containing letters or numbers.');
-    return slug + ".md";
-  }
-
-  function base64(text) {
-    let binary = "";
-    for (const byte of new TextEncoder().encode(text)) binary += String.fromCharCode(byte);
-    return btoa(binary);
-  }
-
-  function saveToken() {
-    storage("token", remember.checked ? token.value.trim() : null);
-  }
-
-  function saved(url) {
-    storage("draft", null);
-    post.value = newPost();
-    status.textContent = "Saved to GitHub. The blog updates after its build finishes. ";
-    const link = document.createElement("a");
-    link.href = url;
-    link.textContent = "View on GitHub";
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
-    status.append(link);
-  }
-
-  post.value = storage("draft") ?? newPost();
-  token.value = storage("token") || "";
-  remember.checked = Boolean(token.value);
-  post.addEventListener("input", () => storage("draft", post.value));
-  token.addEventListener("input", saveToken);
-  remember.addEventListener("change", saveToken);
-  document.querySelector("#forget").addEventListener("click", () => {
-    token.value = "";
-    remember.checked = false;
-    saveToken();
-  });
-
-  sync.addEventListener("click", async () => {
-    if (sync.disabled) return;
-    const text = post.value;
-    let path;
-    try {
-      if (config.repository === "YOUR-USERNAME/YOUR-BLOG") {
-        throw new Error("Configure Duck's repository in this HTML file first.");
-      }
-      const directory = config.contentDir.replace(/^\/+|\/+$/g, "");
-      if (directory.split("/").some(part => part === "." || part === "..")) {
-        throw new Error("The content directory must be a repository-relative path.");
-      }
-      path = [directory, filename(text)].filter(Boolean).join("/")
-        .split("/").map(encodeURIComponent).join("/");
-      if (!token.value.trim()) {
-        document.querySelector("#connection").open = true;
-        token.focus();
-        throw new Error("Enter your GitHub personal access token to sync.");
-      }
-    } catch (error) {
-      status.textContent = error.message;
-      return;
-    }
-
-    storage("draft", text);
-    saveToken();
-    sync.disabled = post.disabled = true;
-    status.textContent = "Syncing…";
-    const url = `https://api.github.com/repos/${config.repository}/contents/${path}`;
-    const headers = {
-      Authorization: `Bearer ${token.value.trim()}`,
-      Accept: "application/vnd.github+json",
-      "X-GitHub-Api-Version": "2026-03-10",
-    };
-    const fileUrl = `https://github.com/${config.repository}/blob/${encodeURIComponent(config.branch)}/${path}`;
-    try {
-      const response = await fetch(url, {
-        method: "PUT",
-        headers: { ...headers, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          branch: config.branch,
-          message: `Add ${decodeURIComponent(path)}`,
-          content: base64(text),
-        }),
-      });
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        const error = new Error(data.message || `GitHub returned ${response.status}.`);
-        error.status = response.status;
-        throw error;
-      }
-      const data = await response.json();
-      saved(data.commit?.html_url || fileUrl);
-    } catch (error) {
-      let recovered = false;
-      if (!error.status || error.status === 409 || error.status === 422 || error.status >= 500) {
-        try {
-          const existing = await fetch(`${url}?ref=${encodeURIComponent(config.branch)}`, {
-            headers: { ...headers, Accept: "application/vnd.github.raw+json" },
-            cache: "no-store",
-          });
-          if (existing.ok) {
-            if (await existing.text() === text) {
-              saved(fileUrl);
-              recovered = true;
-            } else {
-              error.message = "A different post already uses this filename. Change the frontmatter title and sync again.";
-            }
-          }
-        } catch { /* Keep the draft when GitHub is unreachable. */ }
-      }
-      if (!recovered) status.textContent = `Not confirmed saved. ${error.message} Your draft is kept.`;
-    } finally {
-      sync.disabled = post.disabled = false;
-    }
+    template: '---\ntitle: ""\ndate: {{date}}\n---\n\n',
   });
 </script>
 </html>

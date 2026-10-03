@@ -1,0 +1,8 @@
+{
+  "name": "duckposting-core",
+  "version": "0.1.0",
+  "type": "module",
+  "license": "MIT",
+  "exports": "./index.js",
+  "dependencies": { "@milkdown/kit": "7.22.2" }
+}

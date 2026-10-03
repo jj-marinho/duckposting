@@ -1,0 +1,12 @@
+{
+  "name": "duckposting",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node --test test.mjs packages/core/*.test.mjs"
+  },
+  "devDependencies": { "esbuild": "0.28.2" }
+}

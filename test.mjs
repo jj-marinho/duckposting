@@ -4,9 +4,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 // Run the shipped script with a tiny DOM and simulated GitHub. No network calls.
-const script = readFileSync(new URL("./write/index.html", import.meta.url), "utf8")
-  .match(/<script>([\s\S]*?)<\/script>/)[1]
-  .replace('repository: "YOUR-USERNAME/YOUR-BLOG"', 'repository: "pato/blog"');
+const script = readFileSync(new URL("./packages/core/document.js", import.meta.url), "utf8").replaceAll("export ", "")
+  + readFileSync(new URL("./packages/core/publishing.js", import.meta.url), "utf8").replace(/^import .*\n/, "").replace("export ", "")
+  + '\nconnectPublishing(document, { repository: "pato/blog", branch: "main", contentDir: "content/posts", template: "---\\ntitle: \\"\\"\\ndate: {{date}}\\n---\\n\\n" });';
 
 function editor({ request, values = new Map(), blocked = false, source = script } = {}) {
   const nodes = new Map(), calls = [];
@@ -207,4 +207,16 @@ test("plain and quoted frontmatter titles produce safe filenames", async () => {
     assert.equal(app.calls.length, 1);
     assert.equal(app.calls[0].url, `https://api.github.com/repos/pato/blog/contents/content/posts/${name}`);
   }
+});
+
+test("an older in-flight save does not remove a newer draft", async () => {
+  let finish;
+  const app = editor({ request: () => new Promise(resolve => finish = resolve) });
+  prepare(app);
+  const pending = app.click("sync");
+  // A new writing instance can start while the original tab navigates away.
+  app.values.set(draftKey, text + "A newer draft.\n");
+  finish(created());
+  await pending;
+  assert.equal(app.values.get(draftKey), text + "A newer draft.\n");
 });

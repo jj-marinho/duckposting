@@ -1,0 +1,11 @@
+import { copyFile, mkdir } from "node:fs/promises";
+import { resolve } from "node:path";
+const target = process.argv[2];
+if (!target) throw new Error("Usage: node copy-to-blog.mjs /path/to/blog");
+const directory = resolve(target, "duckposting");
+await mkdir(directory, { recursive: true });
+for (const file of ["editor.js", "editor.css", "THIRD_PARTY_LICENSES.txt"]) await copyFile(`dist/${file}`, resolve(directory, file));
+await copyFile("packages/quartz/index.tsx", resolve(directory, "index.tsx"));
+await copyFile("LICENSE", resolve(directory, "LICENSE"));
+await copyFile("packages/quartz/README.md", resolve(directory, "README.md"));
+console.log(`Copied duckposting to ${directory}`);
