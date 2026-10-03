@@ -62,6 +62,11 @@ export function duckposting(config: QuartzConfig, options: Options, assetsDir = 
         <p>Loading duckposting…</p>
         <noscript>Enable JavaScript to write. Reading the blog does not require it.</noscript>
       </div>
+      <style>{`
+        .page[data-frame=full-width] #quartz-body .center.full-width:has([data-duckposting]) { padding-top: 0; }
+        [data-duckposting] { margin-top: 2rem; color-scheme: light; }
+        :root[saved-theme=dark] [data-duckposting] { color-scheme: dark; }
+      `}</style>
     </>
   }
   Body.afterDOMLoaded = `

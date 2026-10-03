@@ -59,6 +59,17 @@ export function setTitle(text, title) {
   return setField(text, 'title', title.replace(/\r?\n/g, ' '));
 }
 
+// Display the calendar day without normalizing an existing timestamp on load.
+export function readDate(text) {
+  const value = frontmatter(text).data.date;
+  return typeof value === 'string' ? value.match(/^\d{4}-\d{2}-\d{2}(?=$|T|\s)/)?.[0] || '' : '';
+}
+
+export function setDate(text, date) {
+  if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('Use a date in YYYY-MM-DD format.');
+  return setField(text, 'date', date);
+}
+
 export function isDraft(text) {
   const value = frontmatter(text).data.draft;
   return value === true || value === 'true';

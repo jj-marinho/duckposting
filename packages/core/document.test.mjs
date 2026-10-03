@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { filename, readTitle, setTitle, splitDocument, isDraft, setDraft, joinDocument, needsSourceMode } from "./document.js";
+import { filename, readTitle, setTitle, splitDocument, isDraft, setDraft, readDate, setDate, joinDocument, needsSourceMode } from "./document.js";
 
 test("editing the title retains other frontmatter and the exact body", () => {
   const original = '---\ntitle: "Before"\ndate: 2026-10-03\ndraft: true\ntags: [systems, writing]\ncustom:\n  nested: untouched\n---\n\n## Body\n\nOlá 🦆\n';
@@ -108,4 +108,14 @@ test("source mode protects Markdown that rich serialization would rewrite", () =
   assert.equal(needsSourceMode('Line\n\nNext', 'Line\nNext'), true);
   assert.equal(needsSourceMode('    indented code\n', 'indented code\n'), true);
   assert.equal(needsSourceMode('Line  \nNext', 'Line\nNext'), true);
+});
+
+test("date edits synchronize only that field, preserving timestamp until explicitly changed", () => {
+  const original = '---\ntitle: "Hello"\ndate: 2026-10-03T10:30:00Z # keep comment\ntags: [one, two]\n---\n\nOlá 🦆\n';
+  assert.equal(readDate(original), '2026-10-03');
+  const updated = setDate(original, '2026-10-04');
+  assert.equal(updated, original.replace('2026-10-03T10:30:00Z', '"2026-10-04"'));
+  assert.equal(readDate(updated), '2026-10-04');
+  assert.equal(readDate('Body'), '');
+  assert.equal(readDate(setDate('Body', '2026-10-04')), '2026-10-04');
 });

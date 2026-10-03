@@ -12,10 +12,11 @@ export async function mountDuckposting(root, options, dependencies = {}) {
   const createEditor = dependencies.createEditor ?? (async (...args) => (await import('./editor.js')).mountEditor(...args));
   root.classList.add('duckposting');
   root.innerHTML = `
-    <div class="duck-toolbar"><button id="back" hidden>← All content</button><button id="new">+ New Post</button></div>
+    <div class="duck-toolbar"><button id="new">+ New Post</button></div>
     <section id="index"><h1>Content</h1><div id="entries"></div></section>
     <div id="editor" hidden></div>
-    <div class="duck-controls"><div class="duck-actions">
+    <div class="duck-controls"><div class="duck-publish-row">
+      <button id="back" hidden>← All content</button><div class="duck-actions">
       <button id="publish" hidden disabled>Publish</button>
       <details id="connection"><summary aria-label="GitHub connection" title="GitHub connection">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12 .7a11.5 11.5 0 0 0-3.64 22.41c.57.11.79-.25.79-.56v-2.2c-3.2.7-3.87-1.36-3.87-1.36-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.75 2.68 1.24 3.33.95.1-.74.4-1.24.73-1.53-2.56-.29-5.25-1.28-5.25-5.68 0-1.26.45-2.28 1.18-3.09-.12-.29-.51-1.46.11-3.05 0 0 .97-.31 3.16 1.18a11 11 0 0 1 5.76 0c2.19-1.49 3.16-1.18 3.16-1.18.62 1.59.23 2.76.11 3.05.73.81 1.18 1.83 1.18 3.09 0 4.42-2.7 5.39-5.27 5.67.41.36.78 1.06.78 2.13v3.23c0 .31.21.68.79.56A11.5 11.5 0 0 0 12 .7Z"/></svg>
@@ -24,7 +25,7 @@ export async function mountDuckposting(root, options, dependencies = {}) {
         <label><input id="remember" type="checkbox"> Remember on this device</label>
         <button id="connect">Connect</button> <button id="forget">Forget</button>
       </div></details>
-    </div><p id="status" role="status" aria-live="polite"></p>
+    </div></div><p id="status" role="status" aria-live="polite"></p>
     <p id="storage-warning" role="status" hidden>Some local data could not be read or saved. Copy your writing before closing this tab.</p></div>
     <dialog id="draft-picker" aria-labelledby="draft-picker-title"><h2 id="draft-picker-title">Continue a draft?</h2><div id="choices"></div>
       <button id="start-new">Start a new post</button> <button id="cancel-picker">Cancel</button></dialog>

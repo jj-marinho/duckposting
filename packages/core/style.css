@@ -1,8 +1,9 @@
 .duckposting [hidden] { display: none !important; }
-.duckposting #title { outline: none; min-height: 1.2em; white-space: pre-wrap; }
+.duckposting { max-width: 42rem; margin-inline: auto; }
+.duckposting #title { outline: none; min-height: 1.2em; white-space: pre-wrap; margin: 0 0 .4rem; font-family: var(--bodyFont, inherit); font-weight: 600; font-size: clamp(2rem, 5vw, 3rem); line-height: 1.15; letter-spacing: -.035em; }
 .duckposting #title:empty::before { content: attr(data-placeholder); opacity: .4; }
 .duckposting #body { cursor: text; }
-.duckposting #body .ProseMirror { outline: none; min-height: 45vh; padding-bottom: 1rem; }
+.duckposting #body .ProseMirror { outline: none; min-height: 18rem; padding-bottom: 1rem; }
 .duckposting #body:has(.ProseMirror > p:only-child > br:only-child)::before { content: "Start writing…"; opacity: .4; pointer-events: none; position: absolute; }
 .duckposting .duck-toolbar, .duckposting .duck-controls { font: 14px/1.5 system-ui, sans-serif; }
 .duckposting .duck-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; margin: 1rem 0; }
@@ -11,7 +12,7 @@
 .duckposting button:hover { border-color: currentColor; }
 .duckposting button:disabled { opacity: .5; cursor: not-allowed; }
 .duckposting button:focus-visible, .duckposting input:focus-visible, .duckposting textarea:focus-visible, .duckposting #title:focus-visible { outline: 2px solid var(--secondary, #36c); outline-offset: 3px; }
-.duckposting .duck-controls { margin: 2rem 0; }
+.duckposting .duck-controls { margin: 1rem 0 2rem; }
 .duckposting details { margin: 1rem 0; }
 .duckposting summary { cursor: pointer; }
 .duckposting textarea, .duckposting input[type="password"] { display: block; box-sizing: border-box; width: 100%; padding: .7rem; border: 1px solid var(--lightgray, #ddd); background: var(--light, #fff); }
@@ -25,12 +26,11 @@
 .duckposting #connection summary { display: flex; align-items: center; padding: .3rem .6rem; min-height: 1.5em; border: 1px solid var(--lightgray, #ddd); border-radius: .25rem; list-style: none; }
 .duckposting #connection summary::-webkit-details-marker { display: none; }
 .duckposting #connection summary:focus-visible { outline: 2px solid var(--secondary, #36c); outline-offset: 3px; }
-.duckposting .duck-connection { position: absolute; top: 100%; left: 0; z-index: 5; margin-top: .5rem; padding: .8rem; box-sizing: border-box; width: min(22rem, calc(100vw - 7rem)); border: 1px solid var(--lightgray, #ddd); background: var(--light, #fff); border-radius: .25rem; }
+.duckposting .duck-connection { position: absolute; top: 100%; right: 0; z-index: 5; margin-top: .5rem; padding: .8rem; box-sizing: border-box; width: min(22rem, calc(100vw - 7rem)); border: 1px solid var(--lightgray, #ddd); background: var(--light, #fff); border-radius: .25rem; }
 .duckposting .duck-entry { display: flex; align-items: center; gap: .5rem; padding: 1rem 0; border-bottom: 1px solid var(--lightgray, #ddd); }
 .duckposting .duck-entry > div { flex: 1; min-width: 0; }
 .duckposting .duck-entry small { display: block; opacity: .65; overflow-wrap: anywhere; font: 12px/1.6 system-ui, sans-serif; }
-.duckposting .duck-settings { margin: 1rem 0 2rem; font: 14px/1.5 system-ui, sans-serif; }
-.duckposting .duck-settings h2 { font: inherit; font-weight: 600; margin: 0 0 .5rem; }
+.duckposting .duck-settings { margin: 0; font: 14px/1.5 system-ui, sans-serif; }
 .duckposting .duck-settings label { display: block; margin: .5rem 0; }
 .duckposting #frontmatter { min-height: 9rem; }
 .duckposting dialog { color: inherit; background: var(--light, #fff); border: 1px solid var(--lightgray, #ddd); border-radius: .5rem; padding: 1.5rem; max-width: min(32rem, calc(100vw - 4rem)); }
@@ -39,3 +39,16 @@
 
 .duckposting input[type="checkbox"] { margin-inline-start: 0; }
 .duckposting .duck-entry button { font: 14px/1.5 system-ui, sans-serif; }
+
+.duckposting .duck-date { display: block; width: auto; max-width: 100%; padding: 0; margin: 0 0 2rem; border: 0; background: transparent; font: 13px/1.6 system-ui, sans-serif; opacity: .65; color-scheme: inherit; }
+.duckposting .duck-editor-tools { border-top: 1px solid var(--lightgray, #ddd); padding-top: 1rem; font: 13px/1.5 system-ui, sans-serif; }
+.duckposting .duck-options, .duckposting .duck-publish-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .75rem; }
+.duckposting .duck-publish-row > .duck-actions { margin-inline-start: auto; }
+.duckposting .duck-options { margin-bottom: .75rem; }
+.duckposting .duck-draft { display: flex; align-items: center; gap: .35rem; }
+.duckposting .duck-muted { opacity: .6; }
+.duckposting #source-toggle { min-width: 0; border-color: transparent; padding-inline: 0; }
+.duckposting #source-label { font: 13px/1.5 system-ui, sans-serif; }
+.duckposting #editor-status:empty, .duckposting #status:empty { display: none; }
+.duckposting .duck-toolbar:has(> button[hidden]:only-child) { display: none; }
+.duckposting #publish { background: var(--dark, #222); color: var(--light, #fff); border-color: transparent; }

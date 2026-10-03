@@ -4,7 +4,7 @@ import { history } from "@milkdown/kit/plugin/history";
 import { trailing } from "@milkdown/kit/plugin/trailing";
 import { $prose, replaceAll } from "@milkdown/kit/utils";
 import { Plugin } from "@milkdown/kit/prose/state";
-import { splitDocument, readTitle, setTitle, isDraft, setDraft, joinDocument, needsSourceMode } from "./document.js";
+import { splitDocument, readTitle, setTitle, isDraft, setDraft, readDate, setDate, joinDocument, needsSourceMode } from "./document.js";
 import "@milkdown/kit/prose/view/style/prosemirror.css";
 import "./style.css";
 
@@ -12,18 +12,21 @@ import "./style.css";
 export async function mountEditor(root, session, { onChange, onReady }) {
   root.classList.add("duckposting");
   root.innerHTML = `
-    <section id="metadata" class="duck-settings">
-      <h2>Post settings</h2>
-      <label><input id="draft-status" type="checkbox"> Draft — hidden from the blog</label>
-      <label for="frontmatter">Frontmatter</label>
-      <textarea id="frontmatter" spellcheck="false"></textarea>
-    </section>
-    <div class="duck-toolbar"><button id="source-toggle" type="button" aria-pressed="false">Markdown</button></div>
     <h1 class="article-title" id="title" contenteditable="plaintext-only" role="textbox" aria-label="Post title" data-placeholder="Your title"></h1>
+    <input id="post-date" class="duck-date" type="date" aria-label="Post date">
     <article class="popover-hint" id="body" aria-label="Post body"></article>
-    <div class="duck-controls">
-      <label for="post" id="source-label" hidden>Markdown source (including frontmatter)</label>
-      <textarea id="post" hidden spellcheck="true" aria-describedby="editor-status"></textarea>
+    <label for="post" id="source-label" hidden>Markdown source (including frontmatter)</label>
+    <textarea id="post" hidden spellcheck="true" aria-describedby="editor-status"></textarea>
+    <div class="duck-editor-tools">
+      <div class="duck-options">
+        <label class="duck-draft"><input id="draft-status" type="checkbox"> Draft <span class="duck-muted">— hidden from the blog</span></label>
+        <button id="source-toggle" type="button" aria-pressed="false">Markdown</button>
+      </div>
+      <details id="metadata" class="duck-settings">
+        <summary>Post settings</summary>
+        <label for="frontmatter">Frontmatter</label>
+        <textarea id="frontmatter" spellcheck="false"></textarea>
+      </details>
       <p id="editor-status" role="status"></p>
     </div>`;
 
@@ -41,6 +44,7 @@ export async function mountEditor(root, session, { onChange, onReady }) {
     try {
       title.textContent = readTitle(post.value);
       get("draft-status").checked = isDraft(post.value);
+      get("post-date").value = readDate(post.value);
       fieldsValid = true;
       fieldError = "";
     } catch (error) {
@@ -49,7 +53,7 @@ export async function mountEditor(root, session, { onChange, onReady }) {
     }
     get("editor-status").textContent = fieldError || (source ? sourceWarning : "");
     title.contentEditable = busy || !fieldsValid ? "false" : "plaintext-only";
-    get("draft-status").disabled = busy || !fieldsValid;
+    get("draft-status").disabled = get("post-date").disabled = busy || !fieldsValid;
   };
   const renderFields = () => {
     metadata.value = splitDocument(post.value).frontmatter;
@@ -58,7 +62,7 @@ export async function mountEditor(root, session, { onChange, onReady }) {
   const toggleMode = raw => {
     source = raw;
     post.hidden = get("source-label").hidden = !raw;
-    title.hidden = body.hidden = raw;
+    title.hidden = body.hidden = get("post-date").hidden = raw;
     get("source-toggle").textContent = raw ? "Rich editor" : "Markdown";
     get("source-toggle").setAttribute("aria-pressed", String(raw));
     get("editor-status").textContent = fieldError || (source ? sourceWarning : "");
@@ -87,6 +91,7 @@ export async function mountEditor(root, session, { onChange, onReady }) {
     metadata.value = splitDocument(post.value).frontmatter;
     persist();
   });
+  on(get("post-date"), "change", () => { post.value = setDate(post.value, get("post-date").value); renderFields(); persist(); });
   on(metadata, "input", () => {
     post.value = joinDocument(metadata.value, bodyText);
     validateFields();
@@ -151,7 +156,7 @@ export async function mountEditor(root, session, { onChange, onReady }) {
     busy = value;
     title.contentEditable = busy || !fieldsValid ? "false" : "plaintext-only";
     post.disabled = metadata.disabled = busy;
-    get("draft-status").disabled = busy || !fieldsValid;
+    get("draft-status").disabled = get("post-date").disabled = busy || !fieldsValid;
     get("source-toggle").disabled = busy || !editor;
     editor?.action(ctx => ctx.get(editorViewCtx).setProps({ editable: () => !busy }));
   } };

@@ -45,7 +45,8 @@ Contents read/write for that repository. Remember on this device is opt-in.
 ## The writing flow
 
 - `/write` lists content with New Post, Edit and confirmed Delete.
-- Settings stay above the title; title and frontmatter stay synchronized.
+- Title, date and body come first. Controls sit below the writing; frontmatter
+  stays under Post settings. Title and date stay synchronized with frontmatter.
 - Local recovery is scoped to the exact document. New Post offers both local
   unfinished posts and repository drafts. Recovery is a choice.
 - Publish changes one Markdown file. Draft checked means committed but hidden

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-alpha.3 — unpublished
+
+- Writing comes first: title, editable date and body above the control panel.
+- All content sits on the left; Publish and GitHub sit together on the right.
+- Frontmatter is collapsed under Post settings; draft and Markdown controls
+  move below the text. The writing column uses a restrained reading width.
+- Date edits update frontmatter while preserving unrelated settings and body.
+
 ## 0.1.0-alpha.2 — unpublished
 
 - One npm package and import: `import { duckposting } from "duckposting"`.
