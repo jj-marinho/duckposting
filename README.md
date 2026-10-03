@@ -120,3 +120,4 @@ markup. Minimal code and a fast writing flow matter more than feature count.
 
 MIT licensed. Milkdown and its dependencies retain their own licenses in the
 installed packages; the build includes their full licenses in `THIRD_PARTY_LICENSES.txt`.
+# duckposting
