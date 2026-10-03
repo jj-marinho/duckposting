@@ -37,6 +37,18 @@ support scope: Quartz 5, GitHub.com, recent browsers and one writer/tab.
 
 ## Evidence
 
+Release tag `v0.1.0-alpha.1` points to source commit `4d0149b`.
+[Checks](https://github.com/jj-marinho/duckposting/actions/runs/37155234939)
+and [demo deployment](https://github.com/jj-marinho/duckposting/actions/runs/37155234942)
+passed. The prerelease is public and its ZIP was downloaded again and compared
+byte-for-byte with the local candidate. Its SHA-256 is
+`914b62e7ee796f4f24ea2dac92b4c69e178846f9d30dbb3a484f53cae4e4c246`.
+The matching integration is pushed to the blog as `c2f2f3c`, preserving newer
+content commits made during release preparation.
+Its deployed `/write/` loaded the Content index with asset hash
+`69affb7c06e7`, matching the local alpha bundle. The hosted sandbox's new-post
+and local-only Publish flow were exercised on its public URL.
+
 - 46 automated checks cover document preservation, GitHub operations, local
   recovery, navigation and dialog cancellation. No tests publish real posts.
 - The actual ZIP was extracted into an independent upstream Quartz 5 checkout.
