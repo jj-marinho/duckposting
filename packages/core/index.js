@@ -1,6 +1,7 @@
 import { Editor, rootCtx, defaultValueCtx, editorViewCtx, serializerCtx } from "@milkdown/kit/core";
 import { commonmark, toggleStrongCommand, toggleEmphasisCommand, wrapInHeadingCommand, wrapInBulletListCommand } from "@milkdown/kit/preset/commonmark";
 import { history } from "@milkdown/kit/plugin/history";
+import { trailing } from "@milkdown/kit/plugin/trailing";
 import { $prose, callCommand, replaceAll } from "@milkdown/kit/utils";
 import { Plugin } from "@milkdown/kit/prose/state";
 import { splitDocument, readTitle, setTitle } from "./document.js";
@@ -19,6 +20,7 @@ export async function mountDuckposting(root, config) {
       <button type="button" data-command="heading">Heading</button>
       <button type="button" data-command="list">List</button>
       <span class="duck-hint">Markdown shortcuts work as you type.</span>
+      <span class="duck-hint" id="code-hint" hidden>In code: Enter adds a line. ⌘/Ctrl+Enter continues below.</span>
     </div>
     <article class="popover-hint" id="body" aria-label="Post body"></article>
     <div class="duck-controls">
@@ -97,6 +99,7 @@ export async function mountDuckposting(root, config) {
 
   const autosave = $prose(ctx => new Plugin({
     view: () => ({ update(view, previous) {
+      get("code-hint").hidden = !view.state.selection.$from.parent.type.spec.code;
       if (source || replacing || disposed || previous.doc.eq(view.state.doc)) return;
       post.value = splitDocument(post.value).frontmatter + ctx.get(serializerCtx)(view.state.doc);
       persist();
@@ -107,8 +110,9 @@ export async function mountDuckposting(root, config) {
     editor = await Editor.make().config(ctx => {
       ctx.set(rootCtx, body);
       ctx.set(defaultValueCtx, splitDocument(post.value).body);
-    }).use(commonmark).use(history).use(autosave).create();
+    }).use(commonmark).use(history).use(trailing).use(autosave).create();
     const view = editor.action(ctx => ctx.get(editorViewCtx));
+    get("code-hint").hidden = !view.state.selection.$from.parent.type.spec.code;
     view.dom.setAttribute("role", "textbox");
     view.dom.setAttribute("aria-label", "Post body");
     view.dom.setAttribute("aria-multiline", "true");

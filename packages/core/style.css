@@ -1,8 +1,8 @@
 .duckposting [hidden] { display: none !important; }
 .duckposting #title { outline: none; min-height: 1.2em; white-space: pre-wrap; }
 .duckposting #title:empty::before { content: attr(data-placeholder); opacity: .4; }
-.duckposting #body { min-height: 45vh; cursor: text; }
-.duckposting #body .ProseMirror { outline: none; }
+.duckposting #body { cursor: text; }
+.duckposting #body .ProseMirror { outline: none; min-height: 45vh; padding-bottom: 1rem; }
 .duckposting #body:has(.ProseMirror > p:only-child > br:only-child)::before { content: "Start writing…"; opacity: .4; pointer-events: none; position: absolute; }
 .duckposting .duck-toolbar, .duckposting .duck-controls { font: 14px/1.5 system-ui, sans-serif; }
 .duckposting .duck-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; margin: 1rem 0; }

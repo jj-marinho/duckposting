@@ -70,6 +70,10 @@ until a second integration actually needs it.
 Type in the rich editor, use Markdown shortcuts or the small formatting toolbar.
 **Markdown** switches to the full source textarea. **Post settings** exposes
 frontmatter; unknown metadata fields remain alongside title/date/draft.
+Code blocks have a trailing paragraph: **Enter** adds a code line;
+**⌘/Ctrl+Enter** continues in a paragraph below. **Down Arrow** from the last
+code line also reaches the paragraph below.
+
 The title supplies a lowercase ASCII filename: `João’s ideas!` becomes
 `joaos-ideas.md`. Title edits update frontmatter, not a heading in the body.
 Only `{{date}}` is substituted in new templates.
