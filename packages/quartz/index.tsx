@@ -2,7 +2,7 @@ import { copyFile, mkdir, writeFile } from "node:fs/promises"
 import { readFileSync } from "node:fs"
 import { createHash } from "node:crypto"
 import { join } from "node:path"
-import type { QuartzComponent, QuartzComponentProps, QuartzConfig, PluginTypes, FullSlug, FilePath } from "@quartz-community/types"
+import type { QuartzComponent, QuartzComponentProps, QuartzConfig, PluginTypes, FullSlug, FilePath, BuildCtx, ProcessedContent } from "@quartz-community/types"
 
 type Options = {
   repository: string
@@ -15,11 +15,46 @@ type Options = {
 
 // Uses Quartz 5's existing content layout and resource pipeline. No theme copied.
 export function duckpostingQuartz(config: QuartzConfig, options: Options, assetsDir = "duckposting") {
-  const version = createHash("sha256").update(readFileSync(join(assetsDir, "editor.js")))
-    .update(readFileSync(join(assetsDir, "editor.css"))).digest("hex").slice(0, 12)
-  const settings = { contentRoot: "content", exclude: ["private", "templates", ".obsidian"], branch: "main", contentDir: "content/posts", template: '---\ntitle: ""\ndate: {{date}}\ndraft: false\n---\n\n', ...options }
-  const Body: QuartzComponent = ({ cfg }: QuartzComponentProps) => {
-    const base = new URL(`https://${cfg.baseUrl || "example.com"}`).pathname.replace(/\/$/, "")
+  const plugins = config.plugins as PluginTypes
+  if (!plugins.filters?.some(filter => ["RemoveDraft", "RemoveDrafts"].includes(filter.name))) {
+    throw new Error("duckposting requires Quartz's RemoveDraft filter so draft posts stay hidden.")
+  }
+  const assetNames = ["editor.js", "editor.css", "THIRD_PARTY_LICENSES.txt"]
+  const assets = assetNames.map(file => {
+    try { return readFileSync(join(assetsDir, file)) }
+    catch (cause) { throw new Error(`duckposting: missing ${join(assetsDir, file)}. Build and copy the editor assets first.`, { cause }) }
+  })
+  const version = createHash("sha256").update(assets[0]).update(assets[1]).digest("hex").slice(0, 12)
+  const directoryPath = (value: string) => {
+    const path = value.replace(/\\/g, "/").replace(/^(?:\.\/)+/, "").replace(/\/$/, "")
+    if (!path || path.startsWith("/") || /^[A-Za-z]:/.test(path) || path.split("/").some(part => ["", ".", ".."].includes(part))) {
+      throw new Error("duckposting: use a repository-relative Quartz content directory, such as content or notes.")
+    }
+    return path
+  }
+  const settingsFor = (ctx: BuildCtx) => {
+    const sourceRoot = directoryPath(ctx.argv.directory)
+    const contentRoot = directoryPath(options.contentRoot ?? sourceRoot)
+    if (contentRoot !== sourceRoot) {
+      throw new Error(`duckposting: contentRoot "${contentRoot}" must match Quartz's --directory "${sourceRoot}". Remove contentRoot or build with --directory ${contentRoot}.`)
+    }
+    const contentDir = directoryPath(options.contentDir ?? `${contentRoot}/posts`)
+    if (contentDir !== contentRoot && !contentDir.startsWith(`${contentRoot}/`)) {
+      throw new Error(`duckposting: contentDir "${contentDir}" must be inside Quartz's content directory "${contentRoot}".`)
+    }
+    const exclude = options.exclude ?? config.configuration.ignorePatterns
+    return { branch: "main", template: '---\ntitle: ""\ndate: {{date}}\ndraft: false\n---\n\n', ...options,
+      contentRoot, contentDir, exclude }
+  }
+  const assertRouteFree = (content: ProcessedContent[]) => {
+    if (content.some(([, file]) => file.data.filePath && /^(?:write|write\/index)\.md$/i.test(String(file.data.relativePath).replace(/\\/g, "/")))) {
+      throw new Error("duckposting reserves /write. Move content/write.md or content/write/index.md to another path.")
+    }
+  }
+  const Body: QuartzComponent = ({ cfg, ctx: context }: QuartzComponentProps) => {
+    const ctx = context as BuildCtx
+    const settings = settingsFor(ctx)
+    const base = ctx.argv.serve || !cfg.baseUrl ? "" : new URL(`https://${cfg.baseUrl}`).pathname.replace(/\/$/, "")
     return <>
       <link rel="stylesheet" href={`${base}/duckposting/editor.css?v=${version}`} />
       <div data-duckposting={JSON.stringify({ ...settings, index: `${base}/duckposting/content.json` })} data-module={`${base}/duckposting/editor.js?v=${version}`}>
@@ -51,23 +86,29 @@ export function duckpostingQuartz(config: QuartzConfig, options: Options, assets
     document.addEventListener('nav', mountDuck)
     mountDuck()
   `
-  const plugins = config.plugins as PluginTypes
   plugins.pageTypes ??= []
   plugins.pageTypes.push({
     name: "Duckposting", priority: 100, layout: "duckposting", body: () => Body,
     match: ({ slug }: { slug: string }) => slug === "write/index",
-    generate: () => [{ slug: "write/index" as FullSlug, title: "Write", data: {} }],
+    generate: ({ content, ctx }) => {
+      settingsFor(ctx)
+      assertRouteFree(content)
+      return [{ slug: "write/index" as FullSlug, title: "Write", data: { unlisted: true } }]
+    },
   })
   plugins.emitters.push({
     name: "DuckpostingAssets",
-    async emit({ argv }, content) {
+    async emit(ctx, content) {
+      const { argv } = ctx
+      const { contentRoot } = settingsFor(ctx)
+      assertRouteFree(content)
       const directory = join(argv.output, "duckposting")
       await mkdir(directory, { recursive: true })
-      const files = ["editor.js", "editor.css", "THIRD_PARTY_LICENSES.txt"]
+      const files = [...assetNames]
       await Promise.all(files.map(file => copyFile(join(assetsDir, file), join(directory, file))))
       // Receives Quartz's filtered content: no unpublished titles or text exposed.
       const index = content.filter(([, file]) => file.data.filePath && /\.md$/i.test(file.data.relativePath || "")).map(([, file]) => ({
-        path: `${argv.directory}/${file.data.relativePath}`,
+        path: `${contentRoot}/${directoryPath(file.data.relativePath!)}`,
         title: file.data.frontmatter?.title || file.data.relativePath,
         draft: false,
       }))

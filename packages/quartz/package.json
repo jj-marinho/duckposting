@@ -4,5 +4,14 @@
   "type": "module",
   "license": "MIT",
   "exports": "./index.tsx",
-  "peerDependencies": { "preact": "^10.0.0" }
+  "peerDependencies": {
+    "preact": "^10.0.0",
+    "@quartz-community/types": "^1.0.0"
+  },
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jj-marinho/duckposting.git",
+    "directory": "packages/quartz"
+  }
 }

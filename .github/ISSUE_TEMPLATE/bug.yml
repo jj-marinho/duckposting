@@ -1,0 +1,25 @@
+name: Bug report
+description: Report a reproducible problem with writing, publishing or installation.
+body:
+  - type: markdown
+    attributes:
+      value: Never include a GitHub token, private Markdown, or a full localStorage export.
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include expected and actual behavior, using a small public example if possible.
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: Duckposting VERSION, Quartz version/commit, browser and operating system.
+    validations:
+      required: true
+  - type: textarea
+    id: error
+    attributes:
+      label: Sanitized error or screenshot
+      description: Remove credentials, private repository details and unpublished writing.

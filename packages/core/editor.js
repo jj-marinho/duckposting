@@ -4,7 +4,7 @@ import { history } from "@milkdown/kit/plugin/history";
 import { trailing } from "@milkdown/kit/plugin/trailing";
 import { $prose, replaceAll } from "@milkdown/kit/utils";
 import { Plugin } from "@milkdown/kit/prose/state";
-import { splitDocument, readTitle, setTitle, isDraft, setDraft } from "./document.js";
+import { splitDocument, readTitle, setTitle, isDraft, setDraft, joinDocument, needsSourceMode } from "./document.js";
 import "@milkdown/kit/prose/view/style/prosemirror.css";
 import "./style.css";
 
@@ -31,14 +31,29 @@ export async function mountEditor(root, session, { onChange, onReady }) {
   const post = get("post"), title = get("title"), body = get("body"), metadata = get("frontmatter");
   const controller = new AbortController();
   const { signal } = controller;
-  let editor, source = false, replacing = false, disposed = false;
+  let editor, source = false, replacing = false, disposed = false, initializing = true, fieldsValid = true, busy = true;
+  post.disabled = metadata.disabled = get("source-toggle").disabled = true;
+  let fieldError = "", sourceWarning = "";
   post.value = session.text;
   let bodyText = splitDocument(post.value).body;
   const persist = () => onChange(post.value);
+  const validateFields = () => {
+    try {
+      title.textContent = readTitle(post.value);
+      get("draft-status").checked = isDraft(post.value);
+      fieldsValid = true;
+      fieldError = "";
+    } catch (error) {
+      fieldsValid = false;
+      fieldError = error.message;
+    }
+    get("editor-status").textContent = fieldError || (source ? sourceWarning : "");
+    title.contentEditable = busy || !fieldsValid ? "false" : "plaintext-only";
+    get("draft-status").disabled = busy || !fieldsValid;
+  };
   const renderFields = () => {
-    try { title.textContent = readTitle(post.value); } catch { title.textContent = ""; }
     metadata.value = splitDocument(post.value).frontmatter;
-    get("draft-status").checked = isDraft(post.value);
+    validateFields();
   };
   const toggleMode = raw => {
     source = raw;
@@ -46,6 +61,7 @@ export async function mountEditor(root, session, { onChange, onReady }) {
     title.hidden = body.hidden = raw;
     get("source-toggle").textContent = raw ? "Rich editor" : "Markdown";
     get("source-toggle").setAttribute("aria-pressed", String(raw));
+    get("editor-status").textContent = fieldError || (source ? sourceWarning : "");
   };
   const reset = () => {
     if (disposed) return;
@@ -66,45 +82,56 @@ export async function mountEditor(root, session, { onChange, onReady }) {
     persist();
   });
   on(metadata, "input", () => {
-    post.value = metadata.value + (metadata.value.endsWith("\n") ? "" : "\n") + bodyText;
-    try { title.textContent = readTitle(post.value); } catch { title.textContent = ""; }
-    get("draft-status").checked = isDraft(post.value);
+    post.value = joinDocument(metadata.value, bodyText);
+    validateFields();
     persist();
   });
   on(get("draft-status"), "change", () => { post.value = setDraft(post.value, get("draft-status").checked); renderFields(); persist(); });
   on(post, "input", () => { bodyText = splitDocument(post.value).body; renderFields(); persist(); });
   on(get("source-toggle"), "click", () => {
     if (source) {
-      try { reset(); } catch (error) { get("editor-status").textContent = `Keep using Markdown: ${error.message}`; return; }
+      try { readTitle(post.value); reset(); } catch (error) { get("editor-status").textContent = `Keep using Markdown: ${error.message}`; return; }
     }
     toggleMode(!source);
   });
 
   const autosave = $prose(ctx => new Plugin({
     view: () => ({ update(view, previous) {
-      if (source || replacing || disposed || previous.doc.eq(view.state.doc)) return;
+      if (initializing || source || replacing || disposed || previous.doc.eq(view.state.doc)) return;
       bodyText = ctx.get(serializerCtx)(view.state.doc);
-      post.value = metadata.value + bodyText;
+      post.value = joinDocument(metadata.value, bodyText);
       persist();
     } }),
   }));
 
   try {
-    editor = await Editor.make().config(ctx => {
+    editor = Editor.make().config(ctx => {
       ctx.set(rootCtx, body);
       ctx.set(defaultValueCtx, splitDocument(post.value).body);
-    }).use(commonmark).use(history).use(trailing).use(autosave).create();
+    }).use(commonmark).use(history).use(trailing).use(autosave);
+    await editor.create();
     const view = editor.action(ctx => ctx.get(editorViewCtx));
     view.dom.setAttribute("role", "textbox");
     view.dom.setAttribute("aria-label", "Post body");
     view.dom.setAttribute("aria-multiline", "true");
     view.dom.setAttribute("data-placeholder", "Start writing…");
-    get("editor-status").textContent = "";
+    const serialized = editor.action(ctx => ctx.get(serializerCtx)(view.state.doc));
+    if (!fieldsValid || needsSourceMode(bodyText, serialized)) {
+      sourceWarning = "This document has Markdown the rich editor would rewrite. Source mode preserves it. Choose Rich editor only if you want that conversion when editing.";
+      toggleMode(true);
+    }
   } catch (error) {
+    try { await editor?.destroy(); } catch { /* Fall back even when partial setup cannot be cleaned up. */ }
+    editor = undefined;
+    sourceWarning = `Rich editor unavailable. Markdown writing still works. ${error.message}`;
     toggleMode(true);
     get("source-toggle").disabled = true;
-    get("editor-status").textContent = `Rich editor unavailable. Markdown writing still works. ${error.message}`;
   }
+  initializing = false;
+  busy = false;
+  post.disabled = metadata.disabled = false;
+  get("source-toggle").disabled = !editor;
+  validateFields();
   onReady();
   const destroy = async () => {
     if (disposed) return;
@@ -113,9 +140,11 @@ export async function mountEditor(root, session, { onChange, onReady }) {
     await editor?.destroy();
   };
   if (!root.isConnected) await destroy();
-  return { destroy, setBusy(busy) {
-    title.contentEditable = busy ? "false" : "plaintext-only";
-    post.disabled = metadata.disabled = get("draft-status").disabled = busy;
+  return { destroy, setBusy(value) {
+    busy = value;
+    title.contentEditable = busy || !fieldsValid ? "false" : "plaintext-only";
+    post.disabled = metadata.disabled = busy;
+    get("draft-status").disabled = busy || !fieldsValid;
     get("source-toggle").disabled = busy || !editor;
     editor?.action(ctx => ctx.get(editorViewCtx).setProps({ editable: () => !busy }));
   } };

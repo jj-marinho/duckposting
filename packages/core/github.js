@@ -1,9 +1,12 @@
+import { contentMatcher } from './config.js';
 // Contents handles one file per commit. Trees list paths without downloading posts.
-export function github(config, token, request = fetch) {
+export function github(config, token, request = fetch, { signal, timeout = 30000 } = {}) {
   const base = `https://api.github.com/repos/${config.repository}`;
   const pathURL = path => `${base}/contents/${path.split('/').map(encodeURIComponent).join('/')}`;
+  const allowed = contentMatcher(config);
+  const ensurePath = path => { if (!allowed(path)) throw new Error('This file is outside the configured Markdown content.'); };
   async function call(url, options = {}) {
-    const response = await request(url, { cache: 'no-store', ...options, headers: {
+    const response = await request(url, { signal: AbortSignal.any([...(signal ? [signal] : []), AbortSignal.timeout(timeout)]), cache: 'no-store', ...options, headers: {
       Authorization: `Bearer ${token()}`, Accept: 'application/vnd.github+json',
       'X-GitHub-Api-Version': '2026-03-10', ...options.headers,
     } });
@@ -16,12 +19,18 @@ export function github(config, token, request = fetch) {
     return response.status === 204 ? null : response.json();
   }
   const read = async path => {
+    ensurePath(path);
     const data = await call(`${pathURL(path)}?ref=${encodeURIComponent(config.branch)}`);
+    if (data.type && data.type !== 'file' || data.encoding && data.encoding !== 'base64' || typeof data.content !== 'string' || typeof data.sha !== 'string') throw new Error('Only Markdown files below GitHub’s inline content limit can be edited.');
     const bytes = Uint8Array.from(atob(data.content.replace(/\s/g, '')), char => char.charCodeAt(0));
-    return { text: new TextDecoder().decode(bytes), sha: data.sha };
+    const text = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes);
+    if (text.startsWith('\uFEFF')) throw new Error('Save this Markdown as UTF-8 without a byte order mark before editing.');
+    return { text, sha: data.sha };
   };
   let busy = false;
   async function change(path, text, sha, remove = false) {
+    ensurePath(path);
+    if (remove && !sha) throw new Error('A file revision is required for deletion.');
     if (busy) throw new Error('Another action is still running.');
     busy = true;
     try {
@@ -54,8 +63,8 @@ export function github(config, token, request = fetch) {
     async list() {
       const data = await call(`${base}/git/trees/${encodeURIComponent(config.branch)}?recursive=1`);
       if (data.truncated) throw new Error('Repository listing is too large to show safely.');
-      return data.tree.filter(file => file.type === 'blob' && file.path.startsWith(config.contentRoot + '/') && /\.md$/i.test(file.path)
-        && !file.path.slice(config.contentRoot.length + 1).split('/').some(part => config.exclude.includes(part)));
+      if (!Array.isArray(data.tree)) throw new Error('GitHub returned an invalid repository listing.');
+      return data.tree.filter(file => file.type === 'blob' && file.mode !== '120000' && allowed(file.path));
     },
   };
 }

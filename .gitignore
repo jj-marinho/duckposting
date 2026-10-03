@@ -3,3 +3,6 @@ dist/
 write/editor.js
 write/editor.css
 write/THIRD_PARTY_LICENSES.txt
+demo/editor.js
+demo/editor.css
+demo/THIRD_PARTY_LICENSES.txt

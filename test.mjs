@@ -89,7 +89,7 @@ test('drafts are scoped to exact document, repository and branch, and survive re
   const reload = draftStore(config, storage);
   assert.equal(reload.drafts['content/a.md'].text, 'A'); assert.equal(reload.drafts['content/b.md'].sha, 'sha-b');
   assert.equal(Object.keys(reload.drafts).length, 3);
-  assert.deepEqual(draftStore({ ...config, branch: 'other' }, storage).drafts, {});
+  assert.equal(Object.keys(draftStore({ ...config, branch: 'other' }, storage).drafts).length, 0);
   reload.forget('content/a.md'); reload.token(null);
   assert.equal(Object.keys(reload.drafts).length, 2); assert.equal(reload.token(), null);
 });
@@ -121,4 +121,46 @@ test('new filenames use frontmatter, strip accents and apostrophes, reject empty
   assert.equal(filename('---\ntitle: "João’s ideas! 🦆"\n---\n\n# Different heading'), 'joaos-ideas.md');
   assert.throws(() => filename('---\ntitle: "🦆 !!!"\n---\n\nBody'), /letters or numbers/);
   assert.throws(() => filename('---\ntitle: >\n  Multiline\n---\nBody'), /single-line/);
+});
+test('invalid storage shapes are recoverable and do not crash the editor', () => {
+  for (const raw of ['null', '[]', '"string"', '{broken']) {
+    const storage = memory(), key = `duck:${config.repository}:${config.branch}:${config.contentDir}:`;
+    storage.setItem(key + 'drafts', raw);
+    const store = draftStore(config, storage);
+    store.save({ id: 'new:1', text: 'still writing' });
+    assert.equal(store.drafts['new:1'].text, 'still writing');
+    assert.equal(storage.getItem(key + 'drafts:recovery'), raw);
+  }
+});
+test('failed legacy migration retains original even when an older drafts key already exists', () => {
+  const storage = memory(), prefix = `duck:${config.repository}:${config.branch}:${config.contentDir}:`;
+  storage.setItem(prefix + 'draft', 'latest writing');
+  storage.setItem(prefix + 'drafts', JSON.stringify({ 'new:1': { id: 'new:1', text: 'older writing' } }));
+  const blockedWrites = { ...storage, setItem() { throw new Error('Quota exceeded'); } };
+  const store = draftStore(config, blockedWrites);
+  assert.equal(store.drafts.legacy.text, 'latest writing');
+  assert.equal(storage.getItem(prefix + 'draft'), 'latest writing');
+});
+test('GitHub refuses files outside content scope and unsupported encoded responses', async () => {
+  let calls = 0;
+  const api = github(config, () => 'token', async () => { calls++; return json({ type: 'file', encoding: 'none', content: '', sha: 'large' }); });
+  await assert.rejects(api.save('.github/workflows/thing.md', 'unwanted'), /outside/);
+  await assert.rejects(api.read('content/../README.md'), /outside/);
+  assert.equal(calls, 0);
+  await assert.rejects(api.read('content/posts/large.md'), /inline content limit/);
+});
+test('API timeouts preserve failure state and release the mutation guard', async () => {
+  const api = github(config, () => 'token', (_url, { signal }) => new Promise((_resolve, reject) => {
+    const timer = setTimeout(() => {}, 100);
+    signal.addEventListener('abort', () => { clearTimeout(timer); reject(signal.reason); }, { once: true });
+  }), { timeout: 5 });
+  await assert.rejects(api.save('content/posts/one.md', 'Body'), /abort|timeout/i);
+  await assert.rejects(api.save('content/posts/one.md', 'Body'), /abort|timeout/i);
+});
+
+test('invalid UTF-8 and BOM files are rejected without changing their bytes', async () => {
+  for (const bytes of [Buffer.from([0xff]), Buffer.from('\uFEFF---\ntitle: Title\n---\nBody')]) {
+    const api = github(config, () => 'token', async () => json({ type: 'file', encoding: 'base64', content: bytes.toString('base64'), sha: 'one' }));
+    await assert.rejects(api.read('content/posts/one.md'), /encoded data|byte order mark/i);
+  }
 });

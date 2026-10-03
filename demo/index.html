@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Try duckposting</title>
+<link rel="stylesheet" href="./editor.css">
+<style>
+  :root { color-scheme: light dark; --light: light-dark(#fff, #171717); --lightgray: light-dark(#ddd, #444); }
+  body { max-width: 48rem; margin: 2rem auto; padding: 0 1rem; font: 18px/1.6 Georgia, serif; }
+  header { border-bottom: 1px solid var(--lightgray); padding-bottom: 1rem; margin-bottom: 2rem; font: 14px/1.5 system-ui; }
+  h1, h2, h3 { line-height: 1.2; }
+  .duckposting #connection { display: none; }
+</style>
+<header id="sandbox"><strong>duckposting sandbox</strong>
+  <p>Create, edit and publish without signing in. Everything stays in this browser; no GitHub requests or token needed. GitHub confirmation messages are simulated.</p>
+  <a href="https://github.com/jj-marinho/duckposting">Source and installation</a> · <button id="reset">Reset sandbox</button>
+</header>
+<main id="writer">Loading sandbox…</main>
+<script type="module">
+  import { mountDuckposting } from './editor.js';
+  import { demoRepository } from './repository.js';
+  const namespace = 'duck:demo/local:main:notes/posts:';
+  const memory = new Map();
+  const storage = {
+    getItem(key) { try { return localStorage.getItem(key) ?? memory.get(key) ?? null; } catch { return memory.get(key) ?? null; } },
+    setItem(key, value) { memory.set(key, value); try { localStorage.setItem(key, value); } catch {} },
+    removeItem(key) { memory.delete(key); try { localStorage.removeItem(key); } catch {} },
+  };
+  storage.setItem(namespace + 'token', 'sandbox-only');
+  const repository = demoRepository(storage);
+  await mountDuckposting(document.querySelector('#writer'), {
+    repository: 'demo/local', contentRoot: 'notes', contentDir: 'notes/posts', index: '/demo-content.json',
+  }, { request: repository.request, storage });
+  document.querySelector('#reset').addEventListener('click', () => {
+    if (!confirm('Reset the sandbox and discard its demo drafts?')) return;
+    repository.reset();
+    for (const key of ['drafts', 'known', 'drafts:recovery', 'token']) storage.removeItem(namespace + key);
+    location.reload();
+  });
+</script>
+</html>

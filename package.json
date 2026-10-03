@@ -8,9 +8,20 @@
   ],
   "scripts": {
     "build": "node build.mjs",
-    "test": "node --test test.mjs packages/*/*.test.mjs"
+    "test": "node --test test.mjs packages/*/*.test.mjs",
+    "package": "node release.mjs"
   },
   "devDependencies": {
-    "esbuild": "0.28.2"
+    "esbuild": "0.28.2",
+    "linkedom": "0.18.13"
+  },
+  "description": "A static, GitHub-backed Markdown editor for Quartz blogs",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jj-marinho/duckposting.git"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

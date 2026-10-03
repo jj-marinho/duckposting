@@ -4,5 +4,15 @@
   "type": "module",
   "license": "MIT",
   "exports": "./index.js",
-  "dependencies": { "@milkdown/kit": "7.22.2" }
+  "dependencies": {
+    "@milkdown/kit": "7.22.2",
+    "picomatch": "4.0.7",
+    "yaml": "2.9.1"
+  },
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jj-marinho/duckposting.git",
+    "directory": "packages/core"
+  }
 }

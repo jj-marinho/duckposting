@@ -1,17 +1,15 @@
-import { mountEditor } from './editor.js';
 import { filename, readTitle, splitDocument, isDraft } from './document.js';
 import { github } from './github.js';
 import { draftStore } from './storage.js';
+import { configuration } from './config.js';
+import { contentEntries, publishedIndex } from './catalog.js';
 
 export async function mountDuckposting(root, options, dependencies = {}) {
   const { request = fetch } = dependencies;
   let storage;
   try { storage = dependencies.storage ?? localStorage; } catch { /* In-memory writing still works. */ }
-  const config = { branch: 'main', contentDir: 'content/posts', contentRoot: 'content', exclude: [],
-    template: '---\ntitle: ""\ndate: {{date}}\ndraft: false\n---\n\n', ...options };
-  for (const path of [config.contentRoot, config.contentDir]) {
-    if (!path || path.startsWith('/') || path.split('/').some(part => ['.', '..', ''].includes(part))) throw new Error('Content paths must be repository-relative directories.');
-  }
+  const config = configuration(options);
+  const createEditor = dependencies.createEditor ?? (async (...args) => (await import('./editor.js')).mountEditor(...args));
   root.classList.add('duckposting');
   root.innerHTML = `
     <div class="duck-toolbar"><button id="back" hidden>← All content</button><button id="new">+ New Post</button></div>
@@ -27,36 +25,30 @@ export async function mountDuckposting(root, options, dependencies = {}) {
         <button id="connect">Connect</button> <button id="forget">Forget</button>
       </div></details>
     </div><p id="status" role="status" aria-live="polite"></p>
-    <p id="storage-warning" role="status" hidden>Local saving is unavailable. Keep this tab open to preserve your writing.</p></div>
+    <p id="storage-warning" role="status" hidden>Some local data could not be read or saved. Copy your writing before closing this tab.</p></div>
     <dialog id="draft-picker"><h2>Continue a draft?</h2><div id="choices"></div>
       <button id="start-new">Start a new post</button> <button id="cancel-picker">Cancel</button></dialog>
     <dialog id="confirm-dialog"><h2 id="confirm-title"></h2><p id="confirm-description"></p>
       <button id="confirm-yes"></button> <button id="confirm-no"></button></dialog>`;
   const get = id => root.querySelector(`#${id}`);
   const controller = new AbortController(), { signal } = controller;
-  const on = (node, event, fn) => node.addEventListener(event, fn, { signal });
+  const on = (node, event, fn) => node.addEventListener(event, async event => {
+    if (disposed) return;
+    try { await fn(event); } catch (error) { status(error.message); }
+  }, { signal });
   const store = draftStore(config, storage, () => get('storage-warning').hidden = false);
   const token = get('token');
   token.value = store.token() || '';
   get('remember').checked = Boolean(token.value);
-  const api = github(config, () => token.value.trim(), request);
-  let published = [], files = null, session, editor, busy = false, ready = false, disposed = false;
+  const api = github(config, () => token.value.trim(), request, { signal });
+  let published = [], files = null, session, editor, busy = false, ready = false, disposed = false, viewTicket = 0;
   const status = text => { if (!disposed) get('status').textContent = text; };
   const titleOf = text => { try { return readTitle(text) || 'Untitled'; } catch { return 'Untitled'; } };
-  const entries = () => {
-    const metadata = new Map(published.map(entry => [entry.path, entry]));
-    for (const [path, entry] of Object.entries(store.known)) {
-      if (entry) metadata.set(path, entry); else metadata.delete(path);
-    }
-    return (files || [...metadata.values()]).map(file => ({
-      title: file.path.split('/').pop().replace(/\.md$/i, '').replace(/[-_]/g, ' '), draft: true,
-      ...file, ...metadata.get(file.path), path: file.path,
-    })).sort((a, b) => a.title.localeCompare(b.title));
-  };
+  const entries = () => contentEntries(config, published, files, store);
   function button(label, fn, disabled = false) {
     const node = document.createElement('button');
     node.type = 'button'; node.textContent = label; node.disabled = disabled;
-    node.addEventListener('click', fn, { signal });
+    on(node, 'click', fn);
     return node;
   }
   function renderIndex() {
@@ -78,10 +70,16 @@ export async function mountDuckposting(root, options, dependencies = {}) {
   }
   function updatePublish() {
     let valid = false;
-    try { filename(session?.text || ''); valid = Boolean(splitDocument(session.text).body.trim()); } catch {}
+    try {
+      const title = readTitle(session?.text || '');
+      if (!session?.path) filename(session?.text || '');
+      valid = Boolean(title.trim()) && !/[\r\n]/.test(title) && Boolean(splitDocument(session.text).body.trim());
+      isDraft(session.text);
+    } catch {}
     get('publish').disabled = busy || !ready || !valid || !token.value.trim() || config.repository === 'YOUR-USERNAME/YOUR-BLOG';
   }
   function setBusy(value) {
+    if (disposed) return;
     busy = value;
     get('back').disabled = get('new').disabled = get('connect').disabled = get('forget').disabled = token.disabled = get('remember').disabled = value;
     editor?.setBusy(value); updatePublish(); renderIndex();
@@ -95,19 +93,32 @@ export async function mountDuckposting(root, options, dependencies = {}) {
   }
   async function open(draft) {
     if (disposed) return;
-    await editor?.destroy(); editor = undefined;
-    session = { ...draft }; ready = false;
+    const ticket = ++viewTicket, current = { ...draft }, previous = editor;
+    editor = undefined; session = current; ready = false;
+    setBusy(true);
     get('index').hidden = get('new').hidden = true;
     get('editor').hidden = get('back').hidden = get('publish').hidden = false;
     status(''); updatePublish();
-    editor = await mountEditor(get('editor'), session, {
-      onChange(text) { session.text = text; store.save(session); updatePublish(); },
-      onReady() { ready = true; updatePublish(); },
-    });
-    if (disposed) await editor.destroy();
+    try {
+      await previous?.destroy();
+      if (disposed || ticket !== viewTicket) return;
+      const mounted = await createEditor(get('editor'), current, {
+        onChange(text) {
+          if (disposed || ticket !== viewTicket) return;
+          current.text = text; store.save(current); updatePublish();
+        },
+        onReady() {},
+      });
+      if (disposed || ticket !== viewTicket) { await mounted.destroy(); return; }
+      editor = mounted; ready = true;
+    } finally { if (!disposed && ticket === viewTicket) setBusy(false); }
   }
   async function back() {
-    await editor?.destroy(); editor = undefined; session = undefined; ready = false;
+    ++viewTicket;
+    const previous = editor;
+    editor = undefined; session = undefined; ready = false;
+    await previous?.destroy();
+    if (disposed) return;
     get('editor').hidden = get('back').hidden = get('publish').hidden = true;
     get('index').hidden = get('new').hidden = false; renderIndex();
   }
@@ -118,8 +129,9 @@ export async function mountDuckposting(root, options, dependencies = {}) {
     return new Promise(resolve => {
       const finish = value => { dialog.close(); cleanup(); resolve(value); };
       const accept = () => finish(true), decline = () => finish(false);
-      const cleanup = () => { get('confirm-yes').removeEventListener('click', accept); get('confirm-no').removeEventListener('click', decline); dialog.removeEventListener('cancel', decline); };
+      const cleanup = () => { get('confirm-yes').removeEventListener('click', accept); get('confirm-no').removeEventListener('click', decline); dialog.removeEventListener('cancel', decline); signal.removeEventListener('abort', decline); };
       get('confirm-yes').addEventListener('click', accept, { signal }); get('confirm-no').addEventListener('click', decline, { signal }); dialog.addEventListener('cancel', decline, { signal });
+      signal.addEventListener('abort', decline, { once: true });
       dialog.showModal();
     });
   }
@@ -127,6 +139,7 @@ export async function mountDuckposting(root, options, dependencies = {}) {
     if (busy) return;
     const local = store.drafts[entry.path];
     if (local && await choose('Resume local changes?', `Saved changes for “${titleOf(local.text)}”.`, 'Use local draft', 'Use repository version')) return open(local);
+    if (disposed) return;
     if (!token.value.trim()) { get('connection').open = true; token.focus(); status('Connect GitHub to read the Markdown for this document.'); return; }
     setBusy(true);
     try { const file = await api.read(entry.path); await open({ id: entry.path, path: entry.path, ...file }); }
@@ -135,12 +148,12 @@ export async function mountDuckposting(root, options, dependencies = {}) {
   }
   async function remove(entry) {
     if (busy || !token.value.trim() || !await choose(`Delete “${entry.title}”?`, 'This removes the file and its local changes. Earlier versions remain in Git history.', 'Delete post', 'Cancel')) return;
+    if (disposed) return;
     setBusy(true); status('Deleting…');
     try {
-      try {
-        const file = await api.read(entry.path);
-        await api.remove(entry.path, file.sha);
-      } catch (error) { if (error.status !== 404) throw error; }
+      const file = await api.read(entry.path);
+      await api.remove(entry.path, file.sha);
+      if (disposed) return;
       store.forget(entry.path); store.mark(entry.path, null);
       files = (files || entries()).filter(file => file.path !== entry.path);
       status('Deleted from GitHub. The blog updates after its build finishes.');
@@ -150,9 +163,16 @@ export async function mountDuckposting(root, options, dependencies = {}) {
   on(get('new'), 'click', async () => {
     if (busy) return;
     if (token.value.trim()) await refresh();
+    if (disposed) return;
     const choices = get('choices'); choices.replaceChildren();
     for (const draft of Object.values(store.drafts).filter(draft => !draft.path)) {
-      const row = document.createElement('p'); row.append(button(`Local draft: ${titleOf(draft.text)}`, () => { get('draft-picker').close(); open(draft); })); choices.append(row);
+      const row = document.createElement('p');
+      row.append(button(`Local draft: ${titleOf(draft.text)}`, () => { get('draft-picker').close(); return open(draft); }),
+        button('Discard', async () => {
+          get('draft-picker').close();
+          if (await choose('Discard this local draft?', 'This only removes the browser copy. No GitHub file is changed.', 'Discard draft', 'Cancel')) store.forget(draft.id);
+          renderIndex();
+        })); choices.append(row);
     }
     for (const entry of entries().filter(entry => entry.draft)) {
       const row = document.createElement('p'); row.append(button(`Repository draft: ${entry.title}`, () => { get('draft-picker').close(); edit(entry); })); choices.append(row);
@@ -162,11 +182,11 @@ export async function mountDuckposting(root, options, dependencies = {}) {
   function startNew() {
     get('draft-picker').close();
     const now = new Date(), date = [now.getFullYear(), now.getMonth() + 1, now.getDate()].map(n => String(n).padStart(2, '0')).join('-');
-    open({ id: `new:${crypto.randomUUID()}`, text: config.template.replaceAll('{{date}}', date) });
+    return open({ id: `new:${crypto.randomUUID()}`, text: config.template.replaceAll('{{date}}', date) });
   }
   on(get('start-new'), 'click', startNew);
   on(get('cancel-picker'), 'click', () => get('draft-picker').close());
-  on(get('back'), 'click', back);
+  on(get('back'), 'click', () => { if (!busy) return back(); });
   function saveToken() { store.token(get('remember').checked ? token.value.trim() : null); updatePublish(); renderIndex(); }
   on(token, 'input', saveToken); on(get('remember'), 'change', saveToken);
   on(get('connect'), 'click', async () => { saveToken(); await refresh(); get('connection').open = false; });
@@ -178,6 +198,7 @@ export async function mountDuckposting(root, options, dependencies = {}) {
     store.save(snapshot); setBusy(true); status('Publishing…');
     try {
       const result = await api.save(path, snapshot.text, snapshot.sha);
+      if (disposed) return;
       store.forget(snapshot.id);
       const entry = { path, title: titleOf(snapshot.text), draft: isDraft(snapshot.text), sha: result.sha };
       store.mark(path, entry);
@@ -190,14 +211,21 @@ export async function mountDuckposting(root, options, dependencies = {}) {
     } catch (error) { status(`Publishing not confirmed. ${error.message} Your local draft is kept.`); }
     finally { setBusy(false); }
   });
-  try {
-    if (config.index) {
-      const response = await request(config.index, { cache: 'no-store' });
-      if (!response.ok) throw new Error();
-      published = await response.json();
-    }
-  } catch { status('The published index is unavailable. Connect GitHub to list repository content.'); }
-  renderIndex();
-  if (token.value.trim()) await refresh();
-  return async () => { disposed = true; controller.abort(); get('draft-picker').close(); get('confirm-dialog').close(); await editor?.destroy(); };
+  async function loadInitial() {
+    setBusy(true);
+    try {
+      if (config.index) {
+        const response = await request(config.index, { cache: 'no-store', signal: AbortSignal.any([signal, AbortSignal.timeout(30000)]) });
+        if (!response.ok) throw new Error();
+        published = publishedIndex(await response.json(), config);
+      }
+    } catch {
+      status('The published index is unavailable. Connect GitHub to list repository content.');
+    } finally { setBusy(false); }
+    if (disposed) return;
+    renderIndex();
+    if (token.value.trim()) await refresh();
+  }
+  void loadInitial().catch(error => status(error.message));
+  return async () => { disposed = true; ++viewTicket; controller.abort(); get('draft-picker').close(); get('confirm-dialog').close(); await editor?.destroy(); };
 }

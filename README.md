@@ -1,91 +1,69 @@
 # duckposting
 
-**Open `/write`, choose a post, write like you're reading your blog, Publish.**
+**A static editor for your blog. Open `/write`, write, Publish.**
 
-A static Markdown editor with Milkdown and GitHub's REST API. Your existing
-site builder publishes the blog. No application server or browser Git clone.
+Milkdown for rich Markdown, GitHub for one-file commits, your existing site
+builder for publishing. No application server, OAuth backend or browser Git clone.
 
-## Small architecture
+**Alpha: Quartz 5 is the supported integration.** Other builders are future
+adapters, not advertised compatibility. No npm package or public release yet.
 
-- **duckposting-core:** content list, rich/source editing, title/frontmatter,
-  per-document local drafts, GitHub connection and single-file commits.
-- **duckposting-quartz:** a Quartz 5 `/write` page using the blog's own layout
-  and styles, plus a tiny index of published Markdown files.
+## Try it
 
-No npm release yet. Build here and copy the assets into your blog.
-See [Quartz setup](packages/quartz/README.md).
-
-## Develop
-
-Node.js 22+:
+The token-free sandbox uses the same core with a fake repository. Create, edit,
+delete and recover writing without signing in; Publish changes only the browser.
 
 ```sh
 npm ci
-npm test
 npm run build
 python3 -m http.server 8000
 ```
 
-Open `http://localhost:8000/write/`. Configure `write/index.html` first.
-To update a Quartz blog:
+Open `http://localhost:8000/demo/`. A public hosted demo is a launch prerequisite;
+this repository currently provides its source and build, not a hosted-demo claim.
 
-```sh
-node copy-to-blog.mjs /path/to/blog
-```
+## Add it to a blog
 
-Build the blog normally. No additional Milkdown dependencies in the blog.
+[Follow the Quartz installation guide](packages/quartz/README.md): copy the
+prebuilt `duckposting/` folder, register it in `quartz.ts`, add the layout, build.
+A versioned ZIP can be generated with `npm run package`; no extra editor packages
+are installed in the blog. Keep per-site configuration outside the copied folder.
 
-## Writing
+The branch must exist and permit direct commits. Enter a fine-grained PAT with
+Contents read/write for that repository. Remember on this device is opt-in.
 
-`/write` lists published content. Connect GitHub using the icon to include
-repository drafts. Each document has **Edit** and **Delete**; deletion requires
-confirmation and creates a Git commit, so earlier versions remain in history.
-**+ New Post** offers unfinished local posts and repository drafts, or a fresh
-post. Local changes to an existing document are offered only for that exact
-repository path. Going back to the list preserves writing; reload opens the
-list again. Recovery is always a choice.
+## The writing flow
 
-**Post settings** is always visible above the title. The editable title and
-frontmatter title stay synchronized. **Draft — hidden from the blog** updates
-`draft: true`; unchecking it writes `draft: false`. Publish saves either state
-to GitHub. The renderer is responsible for hiding drafts (Quartz's RemoveDraft
-filter does this). Local drafts and repository drafts are separate: typing
-saves locally, Publish commits the current document.
+- `/write` lists content with New Post, Edit and confirmed Delete.
+- Settings stay above the title; title and frontmatter stay synchronized.
+- Local recovery is scoped to the exact document. New Post offers both local
+  unfinished posts and repository drafts. Recovery is a choice.
+- Publish changes one Markdown file. Draft checked means committed but hidden
+  by Quartz. Cloudflare or another host deploys after the GitHub commit.
+- New filenames come from titles, including Unicode letters/numbers. Existing
+  documents keep their paths when their titles change.
+- Source preserves renderer-specific Markdown. Rich mode is CommonMark, and
+  existing source defaults to Markdown if rich serialization would change it.
 
-**Markdown** switches to full source; the toggle stays in the same place.
-Source mode is useful for builder-specific syntax. Rich editing handles
-CommonMark, not custom components, wikilinks or an exact renderer preview.
-Rich serialization may normalize Markdown. Code blocks have a trailing
-paragraph; Down Arrow from their last line or ⌘/Ctrl+Enter reaches it.
+Local drafts live in one browser/origin. Repository drafts are committed files.
+“Draft / unpublished” in the list means absent from the deployed published
+index; it does not prove a frontmatter field. Errors keep writing local.
 
-New posts get filenames from their frontmatter title: `João’s ideas!` becomes
-`joaos-ideas.md`. Existing posts keep their paths when renamed in the editor,
-so their URLs remain stable. New-post templates substitute only `{{date}}`.
-Unknown metadata remains intact. Image uploading is not implemented.
+## Small architecture
 
-Publish stays disabled until the editor has a valid title, body and token.
-One action changes one file, with no batch publishing. On uncertain responses,
-the same file is read and compared; deletion is checked for absence. Errors
-preserve the local draft. Success clears only that document's local draft and
-returns to the list. Cloudflare deployment follows the GitHub commit.
+| Part | Responsibility |
+| --- | --- |
+| `duckposting-core` | Content UI, document metadata, recovery and GitHub Contents/Tree API. |
+| `duckposting-quartz` | `/write`, host layout, browser assets and published index. |
+| Host | Rendering Markdown, hiding drafts, deploying and styling articles. |
 
-## Listing without downloading every post
+One root per page, one writing tab and one document per action. No multi-author
+coordination, batch commits, image upload, exact build preview or pull-request
+workflow. Tests protect publishing, metadata and recovery; they simulate GitHub.
 
-The host generates a public JSON array of **published** source paths and titles.
-GitHub's recursive tree API lists repository Markdown paths in one authenticated
-request. Paths absent from the public index are shown as **Draft / unpublished**;
-their title initially comes from the path. Only opening a document downloads
-its Markdown. Draft titles and text are never included in the public index.
+## Reuse core
 
-Successful editor actions cache title/visibility locally so the list stays
-correct while deployment catches up. This deliberately assumes `/write` is
-your writing workflow; concurrent users and edits outside it are not handled.
-Repository and branch must already exist and allow direct commits.
-
-## Integrate another builder
-
-Serve `dist/editor.js` and `dist/editor.css` from your site, and mount inside
-your article layout:
+Serve the built `editor.js` and `editor.css` with your site:
 
 ```js
 import { mountDuckposting } from '/duckposting/editor.js';
@@ -94,46 +72,44 @@ const destroy = await mountDuckposting(articleRoot, {
   branch: 'main',
   contentRoot: 'content',
   contentDir: 'content/posts',
-  exclude: ['private', 'templates', '.obsidian'],
+  exclude: ['private', 'templates'],
   index: '/duckposting/content.json',
   template: '---\ntitle: ""\ndate: {{date}}\ndraft: false\n---\n\n',
 });
 ```
 
-`contentRoot` scopes the list; `contentDir` holds new posts. `exclude` contains
-literal file/folder names excluded from the list, not glob expressions.
-`index` is optional; without it GitHub content initially appears unpublished.
-Its JSON shape is `[{ "path": "content/about.md", "title": "About", "draft": false }]`.
-Call `destroy()` when removing the root during client-side navigation.
+An index is optional, but without it initial repository files appear unpublished.
+Its shape is `[{ "path": "content/about.md", "title": "About" }]`, containing
+only published content. Paths are scoped/validated. Call `destroy()` before
+removing the root on client-side navigation; requests and old callbacks are cancelled.
+Host CSS must account for `.ProseMirror` wrappers. `readTitle` and `isDraft` are
+also exported for small host/demo integrations.
 
-Host CSS supplies article typography; core CSS handles controls and editing
-mechanics. No Shadow DOM or copied theme. Quartz 5 is supported today; other
-builders need adapters for indexing, draft semantics and filename conventions.
-Jekyll's dated filenames, for example, need a small integration change.
+Core reusability does not make draft semantics or filenames universal. Jekyll's
+dated filenames, Hugo's metadata conventions and MDX need adapter-specific work.
 
-## Credentials and local storage
+## Develop and maintain
 
-Use a fine-grained PAT for the repository with **Contents: read and write**.
-**Remember on this device** is opt-in; **Forget** removes credentials without
-removing writing. GitHub.com is the supported API host.
+Node 22+; CI uses Node 24. Recent browsers must support `<dialog>`,
+`AbortSignal.any`, `TextEncoder` and `crypto.randomUUID`.
 
-Anyone can open `/write`; GitHub checks commit permission. Tokens belong only
-in browser storage, never source. Remembering assumes other scripts on the
-site's origin are trusted. Serve the pinned editor bundle from your own site.
-Local drafts are scoped by repository, branch and content directory, then by
-exact path (or a unique ID for a new post). Old Duck drafts and tokens migrate.
-Use one writing tab at a time.
+```sh
+npm test
+npm run build
+node copy-to-blog.mjs /path/to/blog
+npm run package
+```
 
-## Contributing
+Packaging needs `zip`. CI uploads a release candidate; it does not publish a
+release or npm package. All workspace packages remain private to prevent an
+accidental incomplete npm release. Bundled dependency licenses ship alongside
+the browser assets.
 
-`npm test` checks UTF-8 create/update/delete, collisions, lost responses,
-concurrent-action protection, draft isolation/migration and metadata
-preservation. GitHub is simulated; tests don't publish real posts. Browser
-checks can mount with `{ request, storage }` as a third argument to supply
-an isolated fake repository; normal integrations omit it.
+[Contributing](CONTRIBUTING.md) · [Support](SUPPORT.md) ·
+[Security](SECURITY.md) · [Troubleshooting](docs/troubleshooting.md) ·
+[Audit and release plan](docs/audit-and-release-plan.md)
 
-Keep changes small. Add adapters instead of forking core. No framework or
-provider registry until another integration needs it.
+A remembered PAT trusts every script on the site's origin. Never put credentials
+in source or public issues. See the security policy before hosting the editor.
 
-MIT licensed. The build includes dependency licenses in
-`THIRD_PARTY_LICENSES.txt`.
+MIT licensed.
