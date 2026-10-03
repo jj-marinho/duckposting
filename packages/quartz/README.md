@@ -5,35 +5,43 @@ Markdown content, edits posts, recovers local writing and commits one document
 at a time through GitHub. No editor server or extra browser installation.
 Quartz 4 is not supported. See the [project support policy](https://github.com/jj-marinho/duckposting/blob/main/SUPPORT.md).
 
-## 1. Copy one folder
+## 1. Install the package
 
-Download `duckposting-0.1.0-alpha.1.zip` from the
-[alpha release](https://github.com/jj-marinho/duckposting/releases/tag/v0.1.0-alpha.1).
-Extract it and copy its
-`duckposting/` folder into the root of your Quartz repository. It contains the
-prebuilt browser files, adapter, licenses and VERSION. No new Milkdown or YAML
-dependency is installed in the blog.
+The package is named `duckposting`. It is **not published to npm yet**. During
+alpha testing, generate an npm package in the duckposting checkout:
 
-Developers can build that archive in the duckposting source checkout with
-`npm ci && npm run package`. For local
-iteration, `node /path/to/duckposting/copy-to-blog.mjs /path/to/blog` copies the
-built files. It works from another working directory too.
+```sh
+npm ci
+npm run package
+```
+
+Copy `dist/duckposting-0.1.0-alpha.2.tgz` into your blog's `vendor/` directory,
+then run from the blog:
+
+```sh
+npm install ./vendor/duckposting-0.1.0-alpha.2.tgz
+```
+
+Commit the archive, package.json and package-lock.json so your host's `npm ci`
+installs the same tested package. This is a normal npm dependency, containing
+prebuilt browser assets; the blog does not install Milkdown or build the editor.
+Once published, only the install command changes to `npm install duckposting`.
 
 ## 2. Register the writing page
 
 In the blog's `quartz.ts`, after loading its config and before exporting it:
 
 ```ts
-import { duckpostingQuartz } from './duckposting/index'
+import { duckposting } from 'duckposting'
 
 const config = await loadQuartzConfig()
-duckpostingQuartz(config, { repository: 'your-name/your-blog' })
+duckposting(config, { repository: 'your-name/your-blog' })
 export default config
 ```
 
 Keep your existing config loading and customizations; add the import and function
 call instead of replacing the whole file. Keep site-specific options here,
-outside the replaceable `duckposting/` folder.
+outside the installed package.
 
 In `quartz.config.yaml`, add this under your existing `layout.byPageType`:
 
@@ -76,7 +84,6 @@ changing their title keeps their path/URL. Delete requires confirmation.
 | `contentDir` | `<contentRoot>/posts`; must be inside contentRoot. |
 | `exclude` | Quartz's ignorePatterns; literal names or relative glob patterns. |
 | `template` | Frontmatter title, today's `{{date}}`, `draft: false`, empty body. |
-| Third argument | Source assets folder, normally `duckposting`. |
 
 Use repository-relative Quartz content directories (`content`, `notes`,
 `src/content`). `./` and Windows separators normalize; absolute paths and `..`
@@ -103,13 +110,14 @@ wikilinks, callouts, embeds, GFM extensions or builder-specific syntax.
 
 ## Upgrade / remove
 
-Replace the `duckposting/` folder with the new release, retain your `quartz.ts`
-options and YAML layout, then rebuild. Check VERSION and release notes first.
-Asset URLs carry a content hash. Browser draft/token keys are retained across
-these alpha changes; copy important writing before any upgrade.
+Install the next version with npm, commit the changed lockfile and rebuild.
+During unpublished alpha testing, install a new versioned archive in `vendor/`
+and remove the old archive after updating. Keep your `quartz.ts` options and YAML
+layout. Asset URLs carry a content hash. Browser draft/token keys are retained;
+copy important writing before any upgrade.
 
-To remove: remove the import/function call from `quartz.ts`, remove the optional
-YAML layout entry and `duckposting/` folder, then rebuild. Markdown posts and
-Git history remain. Browser recovery is separate; use Forget for credentials.
+To remove: remove the import/function call from `quartz.ts` and the YAML layout
+entry, run `npm uninstall duckposting`, delete its vendor archive, then rebuild.
+Markdown posts and Git history remain. Use Forget to remove browser credentials.
 
 [Read troubleshooting](https://github.com/jj-marinho/duckposting/blob/main/docs/troubleshooting.md).

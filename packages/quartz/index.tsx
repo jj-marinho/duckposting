@@ -1,7 +1,8 @@
 import { copyFile, mkdir, writeFile } from "node:fs/promises"
 import { readFileSync } from "node:fs"
 import { createHash } from "node:crypto"
-import { join } from "node:path"
+import { join, dirname } from "node:path"
+import { fileURLToPath } from "node:url"
 import type { QuartzComponent, QuartzComponentProps, QuartzConfig, PluginTypes, FullSlug, FilePath, BuildCtx, ProcessedContent } from "@quartz-community/types"
 
 type Options = {
@@ -14,7 +15,7 @@ type Options = {
 }
 
 // Uses Quartz 5's existing content layout and resource pipeline. No theme copied.
-export function duckpostingQuartz(config: QuartzConfig, options: Options, assetsDir = "duckposting") {
+export function duckposting(config: QuartzConfig, options: Options, assetsDir = dirname(fileURLToPath(import.meta.url))) {
   const plugins = config.plugins as PluginTypes
   if (!plugins.filters?.some(filter => ["RemoveDraft", "RemoveDrafts"].includes(filter.name))) {
     throw new Error("duckposting requires Quartz's RemoveDraft filter so draft posts stay hidden.")
@@ -22,7 +23,7 @@ export function duckpostingQuartz(config: QuartzConfig, options: Options, assets
   const assetNames = ["editor.js", "editor.css", "THIRD_PARTY_LICENSES.txt"]
   const assets = assetNames.map(file => {
     try { return readFileSync(join(assetsDir, file)) }
-    catch (cause) { throw new Error(`duckposting: missing ${join(assetsDir, file)}. Build and copy the editor assets first.`, { cause }) }
+    catch (cause) { throw new Error(`duckposting: missing ${join(assetsDir, file)}. Reinstall the duckposting package or run npm run build in its source checkout.`, { cause }) }
   })
   const version = createHash("sha256").update(assets[0]).update(assets[1]).digest("hex").slice(0, 12)
   const directoryPath = (value: string) => {

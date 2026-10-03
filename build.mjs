@@ -18,3 +18,7 @@ for (const directory of ["write", "demo"]) {
   await mkdir(directory, { recursive: true });
   for (const file of ["editor.js", "editor.css", "THIRD_PARTY_LICENSES.txt"]) await copyFile(`dist/${file}`, `${directory}/${file}`);
 }
+
+// Quartz keeps npm imports external, so assets stay beside this module.
+await build({ entryPoints: ["packages/quartz/index.tsx"], format: "esm", platform: "node", target: "node22", jsx: "automatic", jsxImportSource: "preact", outfile: "dist/index.js" });
+await copyFile("packages/quartz/index.d.ts", "dist/index.d.ts");

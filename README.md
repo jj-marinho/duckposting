@@ -6,12 +6,13 @@ Milkdown for rich Markdown, GitHub for one-file commits, your existing site
 builder for publishing. No application server, OAuth backend or browser Git clone.
 
 **Alpha: Quartz 5 is the supported integration.** Other builders are future
-adapters, not advertised compatibility. No npm package is required.
+adapters, not advertised compatibility. One package and import: `duckposting`.
+The npm package is prepared locally and has not been published to the registry.
 
 ## Try it
 
 **[Try the sandbox](https://jj-marinho.github.io/duckposting/)** ·
-**[Download the Quartz alpha](https://github.com/jj-marinho/duckposting/releases/tag/v0.1.0-alpha.1)**
+**[Install on Quartz](packages/quartz/README.md)**
 
 The token-free sandbox uses the same core with a fake repository. Create, edit,
 delete and recover writing without signing in; Publish changes only the browser.
@@ -26,10 +27,17 @@ For a local sandbox, open `http://localhost:8000/demo/`.
 
 ## Add it to a blog
 
-[Follow the Quartz installation guide](packages/quartz/README.md): copy the
-prebuilt `duckposting/` folder, register it in `quartz.ts`, add the layout, build.
-A versioned ZIP is attached to the alpha release; no extra editor packages
-are installed in the blog. Keep per-site configuration outside the copied folder.
+[Follow the Quartz installation guide](packages/quartz/README.md). During alpha
+testing, install the locally packed npm archive; after registry publication the
+command will be `npm install duckposting`.
+
+```ts
+import { duckposting } from 'duckposting'
+duckposting(config, { repository: 'your-name/your-blog' })
+```
+
+Add the small Quartz YAML layout shown in the guide, then build normally.
+The package supplies `/write`, the browser assets and the published content index.
 
 The branch must exist and permit direct commits. Enter a fine-grained PAT with
 Contents read/write for that repository. Remember on this device is opt-in.
@@ -63,33 +71,6 @@ One root per page, one writing tab and one document per action. No multi-author
 coordination, batch commits, image upload, exact build preview or pull-request
 workflow. Tests protect publishing, metadata and recovery; they simulate GitHub.
 
-## Reuse core
-
-Serve the built `editor.js` and `editor.css` with your site:
-
-```js
-import { mountDuckposting } from '/duckposting/editor.js';
-const destroy = await mountDuckposting(articleRoot, {
-  repository: 'your-name/your-blog',
-  branch: 'main',
-  contentRoot: 'content',
-  contentDir: 'content/posts',
-  exclude: ['private', 'templates'],
-  index: '/duckposting/content.json',
-  template: '---\ntitle: ""\ndate: {{date}}\ndraft: false\n---\n\n',
-});
-```
-
-An index is optional, but without it initial repository files appear unpublished.
-Its shape is `[{ "path": "content/about.md", "title": "About" }]`, containing
-only published content. Paths are scoped/validated. Call `destroy()` before
-removing the root on client-side navigation; requests and old callbacks are cancelled.
-Host CSS must account for `.ProseMirror` wrappers. `readTitle` and `isDraft` are
-also exported for small host/demo integrations.
-
-Core reusability does not make draft semantics or filenames universal. Jekyll's
-dated filenames, Hugo's metadata conventions and MDX need adapter-specific work.
-
 ## Develop and maintain
 
 Node 22+; CI uses Node 24. Recent browsers must support `<dialog>`,
@@ -98,14 +79,13 @@ Node 22+; CI uses Node 24. Recent browsers must support `<dialog>`,
 ```sh
 npm test
 npm run build
-node copy-to-blog.mjs /path/to/blog
 npm run package
 ```
 
-Packaging needs `zip`. CI uploads a release candidate; it does not publish a
-release or npm package. All workspace packages remain private to prevent an
-accidental incomplete npm release. Bundled dependency licenses ship alongside
-the browser assets.
+`npm run package` builds and packs `dist/duckposting-<version>.tgz` using npm.
+CI uploads this candidate; it does not publish to npm. The package remains private
+until registry publication is explicitly requested. Browser dependencies are
+bundled; only Quartz types and Preact are peers. Licenses ship with the assets.
 
 [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [Support](SUPPORT.md) ·
 [Security](SECURITY.md) · [Troubleshooting](docs/troubleshooting.md) ·

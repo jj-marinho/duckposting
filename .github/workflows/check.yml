@@ -22,6 +22,6 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: duckposting-release-candidate
-          path: dist/duckposting-*.zip
+          path: dist/duckposting-*.tgz
           if-no-files-found: error
           retention-days: 14

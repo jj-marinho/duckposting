@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.0-alpha.2 — unpublished
+
+- One npm package and import: `import { duckposting } from "duckposting"`.
+- Prebuilt editor assets and typed Quartz entry ship together. Assets resolve
+  beside the installed module, independent of the build working directory.
+- npm pack replaces the ZIP/copy scripts; the blog uses a pinned local archive
+  while testing. No registry publication.
+- Existing editor behavior, document paths and browser storage stay unchanged.
+
 ## 0.1.0-alpha.1 — 2026-10-03
 
 First public alpha, supporting Quartz 5. Copy the prebuilt integration folder;

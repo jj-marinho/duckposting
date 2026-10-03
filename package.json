@@ -1,6 +1,6 @@
 {
   "name": "duckposting",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "private": true,
   "type": "module",
   "workspaces": [
@@ -9,7 +9,8 @@
   "scripts": {
     "build": "node build.mjs",
     "test": "node --test test.mjs packages/*/*.test.mjs",
-    "package": "node release.mjs"
+    "package": "npm pack --pack-destination dist",
+    "prepack": "npm run build"
   },
   "devDependencies": {
     "esbuild": "0.28.2",
@@ -23,5 +24,26 @@
   },
   "engines": {
     "node": ">=22"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist/index.js",
+    "dist/index.d.ts",
+    "dist/editor.js",
+    "dist/editor.css",
+    "dist/THIRD_PARTY_LICENSES.txt",
+    "packages/quartz/README.md",
+    "CHANGELOG.md",
+    "SECURITY.md",
+    "SUPPORT.md"
+  ],
+  "peerDependencies": {
+    "preact": "^10.0.0",
+    "@quartz-community/types": "^1.0.0"
   }
 }

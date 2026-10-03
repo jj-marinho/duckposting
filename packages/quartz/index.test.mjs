@@ -5,7 +5,7 @@ import { readFile, mkdir, writeFile, mkdtemp, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 const { code } = await transform(await readFile(new URL('./index.tsx', import.meta.url), 'utf8'), { loader: 'tsx', format: 'esm', jsxFactory: '__jsx', jsxFragment: '__Fragment' });
-const { duckpostingQuartz } = await import(`data:text/javascript;base64,${Buffer.from('const __Fragment = \"fragment\"; const __jsx = (tag, props, ...children) => ({ tag, props, children });\n' + code).toString('base64')}`);
+const { duckposting } = await import(`data:text/javascript;base64,${Buffer.from('const __Fragment = \"fragment\"; const __jsx = (tag, props, ...children) => ({ tag, props, children });\n' + code).toString('base64')}`);
 test('Quartz index includes only real Markdown files, never virtual pages or full text', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'duck-adapter-'));
   try {
@@ -13,7 +13,7 @@ test('Quartz index includes only real Markdown files, never virtual pages or ful
     await mkdir(assets);
     for (const file of ['editor.js', 'editor.css', 'THIRD_PARTY_LICENSES.txt']) await writeFile(join(assets, file), 'fixture');
     const config = { configuration: { ignorePatterns: [] }, plugins: { filters: [{ name: 'RemoveDraft' }], emitters: [], pageTypes: [] } };
-    duckpostingQuartz(config, { repository: 'pato/blog' }, assets);
+    duckposting(config, { repository: 'pato/blog' }, assets);
     assert.equal(config.plugins.pageTypes[0].match({ slug: 'write/index' }), true);
     const published = [
       [{}, { data: { relativePath: 'about.md', filePath: 'content/about.md', frontmatter: { title: 'About' } }, value: 'private source text' }],
@@ -33,7 +33,7 @@ test('Quartz derives content paths and preserves exclusions, and respects deploy
     await mkdir(assets);
     for (const file of ['editor.js', 'editor.css', 'THIRD_PARTY_LICENSES.txt']) await writeFile(join(assets, file), 'fixture');
     const config = { configuration: { ignorePatterns: ['secret', '**/.obsidian/**', 'archive/**', '*.tmp'] }, plugins: { filters: [{ name: 'RemoveDraft' }], emitters: [], pageTypes: [] } };
-    duckpostingQuartz(config, { repository: 'someone/blog' }, assets);
+    duckposting(config, { repository: 'someone/blog' }, assets);
     const body = config.plugins.pageTypes[0].body();
     const render = (directory, serve = false) => body({ cfg: { baseUrl: 'example.org/garden' }, ctx: { argv: { directory, serve } } });
     const deployed = render('./notes/');
@@ -58,12 +58,12 @@ test('Quartz fails early for incomplete assets, missing draft protection, and a 
   const directory = await mkdtemp(join(tmpdir(), 'duck-adapter-'));
   try {
     const config = { configuration: { ignorePatterns: [] }, plugins: { filters: [], emitters: [], pageTypes: [] } };
-    assert.throws(() => duckpostingQuartz(config, { repository: 'someone/blog' }, directory), /RemoveDraft/);
+    assert.throws(() => duckposting(config, { repository: 'someone/blog' }, directory), /RemoveDraft/);
     config.plugins.filters.push({ name: 'RemoveDrafts' });
     for (const file of ['editor.js', 'editor.css']) await writeFile(join(directory, file), 'fixture');
-    assert.throws(() => duckpostingQuartz(config, { repository: 'someone/blog' }, directory), /THIRD_PARTY_LICENSES/);
+    assert.throws(() => duckposting(config, { repository: 'someone/blog' }, directory), /THIRD_PARTY_LICENSES/);
     await writeFile(join(directory, 'THIRD_PARTY_LICENSES.txt'), 'fixture');
-    duckpostingQuartz(config, { repository: 'someone/blog' }, directory);
+    duckposting(config, { repository: 'someone/blog' }, directory);
     for (const relativePath of ['write.md', 'write/index.md', 'write\\index.md']) {
       const content = [[{}, { data: { relativePath, filePath: `content/${relativePath}` } }]];
       assert.throws(() => config.plugins.pageTypes[0].generate({ content, ctx: { argv: { directory: 'content' } } }), /reserves \/write/);
@@ -81,7 +81,7 @@ test('Quartz rejects conflicting content roots and new-post directories outside 
     for (const file of ['editor.js', 'editor.css', 'THIRD_PARTY_LICENSES.txt']) await writeFile(join(directory, file), 'fixture');
     const register = options => {
       const config = { configuration: { ignorePatterns: [] }, plugins: { filters: [{ name: 'RemoveDrafts' }], emitters: [], pageTypes: [] } };
-      duckpostingQuartz(config, { repository: 'someone/blog', ...options }, directory);
+      duckposting(config, { repository: 'someone/blog', ...options }, directory);
       return config.plugins;
     };
     const ctx = { argv: { directory: 'notes', output: join(directory, 'output') } };
