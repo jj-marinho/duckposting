@@ -91,6 +91,11 @@ syntax and rendering behavior. A theme is therefore often much more than a
 stylesheet. Supporting arbitrary themes means understanding their DOM and
 renderer, not inventing a universal CSS importer.
 
+The differing contracts are documented by the builders themselves:
+[Hugo frontmatter](https://gohugo.io/content-management/front-matter/),
+[Jekyll posts](https://jekyllrb.com/docs/posts/) and
+[Astro scoped styling](https://docs.astro.build/en/guides/styling/).
+
 Inherited fonts/colors/ordinary element rules generally follow site styling.
 Selectors such as `article > p` do not reach a paragraph inside `.ProseMirror`;
 component-scoped styles and syntax highlighting can also differ. The integration
@@ -129,6 +134,14 @@ does not claim exhaustive Safari/Firefox/mobile accessibility coverage, a formal
 security audit, or support for every Quartz plugin/theme combination. A clean
 dependency install reports no known npm advisories at audit time; that is not a
 guarantee about undiscovered vulnerabilities.
+
+Release verification: source fixes were pushed as `ebca560`; its
+[GitHub CI run passed](https://github.com/jj-marinho/duckposting/actions/runs/37141753276).
+The matching blog integration was pushed as `e8fd065`, after pulling Pato's
+latest content changes. The deployed `/write/` loaded its Content index with
+asset hash `a02d691a4ad0`, matching the final local bundle. The ZIP's adapter,
+assets, guide and VERSION were byte-compared with the blog's copied files.
+No real post was created/deleted by these browser checks.
 
 ## Security and data expectations
 
