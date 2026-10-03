@@ -33,7 +33,8 @@ Use your normal content frame instead of `full-width` if desired. The header,
 footer, fonts, colours and article styles come from the blog. The adapter
 creates `write/index.html` and copies `editor.js` and `editor.css` into the
 build output. The browser bundle loads only on the writing page, and is served
-from the blog itself. No external CDN hosts editor code.
+from the blog itself. No external CDN hosts editor code. Asset URLs include a content hash so browser
+caches cannot pair a new writing page with an older editor bundle.
 
 Options: `repository`, `branch` (main), `contentRoot` (content),
 `contentDir` (content/posts), `exclude` (private, templates, .obsidian), `template`.

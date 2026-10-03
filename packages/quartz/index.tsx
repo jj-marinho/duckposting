@@ -1,4 +1,6 @@
 import { copyFile, mkdir, writeFile } from "node:fs/promises"
+import { readFileSync } from "node:fs"
+import { createHash } from "node:crypto"
 import { join } from "node:path"
 import type { QuartzComponent, QuartzComponentProps, QuartzConfig, PluginTypes, FullSlug, FilePath } from "@quartz-community/types"
 
@@ -13,12 +15,14 @@ type Options = {
 
 // Uses Quartz 5's existing content layout and resource pipeline. No theme copied.
 export function duckpostingQuartz(config: QuartzConfig, options: Options, assetsDir = "duckposting") {
+  const version = createHash("sha256").update(readFileSync(join(assetsDir, "editor.js")))
+    .update(readFileSync(join(assetsDir, "editor.css"))).digest("hex").slice(0, 12)
   const settings = { contentRoot: "content", exclude: ["private", "templates", ".obsidian"], branch: "main", contentDir: "content/posts", template: '---\ntitle: ""\ndate: {{date}}\ndraft: false\n---\n\n', ...options }
   const Body: QuartzComponent = ({ cfg }: QuartzComponentProps) => {
     const base = new URL(`https://${cfg.baseUrl || "example.com"}`).pathname.replace(/\/$/, "")
     return <>
-      <link rel="stylesheet" href={`${base}/duckposting/editor.css`} />
-      <div data-duckposting={JSON.stringify({ ...settings, index: `${base}/duckposting/content.json` })} data-module={`${base}/duckposting/editor.js`}>
+      <link rel="stylesheet" href={`${base}/duckposting/editor.css?v=${version}`} />
+      <div data-duckposting={JSON.stringify({ ...settings, index: `${base}/duckposting/content.json` })} data-module={`${base}/duckposting/editor.js?v=${version}`}>
         <p>Loading duckposting…</p>
         <noscript>Enable JavaScript to write. Reading the blog does not require it.</noscript>
       </div>
