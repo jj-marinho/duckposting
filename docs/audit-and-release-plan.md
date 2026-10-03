@@ -5,6 +5,10 @@ local recovery, GitHub protocol, packaging, installation and support experience.
 The audit included independent reviews of core and integration code, a clean
 upstream Quartz installation, automated regressions and browser testing.
 
+This report records the original audit candidate. Subsequent work is tracked in
+[the public-alpha follow-up](alpha-release.md), including distribution and the
+additional keyboard/editor fixes.
+
 ## Assessment
 
 **A reasonable Quartz 5 public alpha is achievable with this architecture.**

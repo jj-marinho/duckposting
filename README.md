@@ -6,9 +6,12 @@ Milkdown for rich Markdown, GitHub for one-file commits, your existing site
 builder for publishing. No application server, OAuth backend or browser Git clone.
 
 **Alpha: Quartz 5 is the supported integration.** Other builders are future
-adapters, not advertised compatibility. No npm package or public release yet.
+adapters, not advertised compatibility. No npm package is required.
 
 ## Try it
+
+**[Try the sandbox](https://jj-marinho.github.io/duckposting/)** ·
+**[Download the Quartz alpha](https://github.com/jj-marinho/duckposting/releases/tag/v0.1.0-alpha.1)**
 
 The token-free sandbox uses the same core with a fake repository. Create, edit,
 delete and recover writing without signing in; Publish changes only the browser.
@@ -19,14 +22,13 @@ npm run build
 python3 -m http.server 8000
 ```
 
-Open `http://localhost:8000/demo/`. A public hosted demo is a launch prerequisite;
-this repository currently provides its source and build, not a hosted-demo claim.
+For a local sandbox, open `http://localhost:8000/demo/`.
 
 ## Add it to a blog
 
 [Follow the Quartz installation guide](packages/quartz/README.md): copy the
 prebuilt `duckposting/` folder, register it in `quartz.ts`, add the layout, build.
-A versioned ZIP can be generated with `npm run package`; no extra editor packages
+A versioned ZIP is attached to the alpha release; no extra editor packages
 are installed in the blog. Keep per-site configuration outside the copied folder.
 
 The branch must exist and permit direct commits. Enter a fine-grained PAT with
@@ -105,7 +107,7 @@ release or npm package. All workspace packages remain private to prevent an
 accidental incomplete npm release. Bundled dependency licenses ship alongside
 the browser assets.
 
-[Contributing](CONTRIBUTING.md) · [Support](SUPPORT.md) ·
+[Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [Support](SUPPORT.md) ·
 [Security](SECURITY.md) · [Troubleshooting](docs/troubleshooting.md) ·
 [Audit and release plan](docs/audit-and-release-plan.md)
 

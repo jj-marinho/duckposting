@@ -7,13 +7,15 @@ Quartz 4 is not supported. See the [project support policy](https://github.com/j
 
 ## 1. Copy one folder
 
-Extract a versioned `duckposting-<version>.zip` release candidate and copy its
+Download `duckposting-0.1.0-alpha.1.zip` from the
+[alpha release](https://github.com/jj-marinho/duckposting/releases/tag/v0.1.0-alpha.1).
+Extract it and copy its
 `duckposting/` folder into the root of your Quartz repository. It contains the
 prebuilt browser files, adapter, licenses and VERSION. No new Milkdown or YAML
 dependency is installed in the blog.
 
-Until the first public release is created, developers can build that archive in
-the duckposting source checkout with `npm ci && npm run package`. For local
+Developers can build that archive in the duckposting source checkout with
+`npm ci && npm run package`. For local
 iteration, `node /path/to/duckposting/copy-to-blog.mjs /path/to/blog` copies the
 built files. It works from another working directory too.
 
@@ -70,7 +72,7 @@ changing their title keeps their path/URL. Delete requires confirmation.
 | --- | --- |
 | `repository` | Required `owner/repository`; GitHub.com only. |
 | `branch` | `main`. |
-| `contentRoot` | Quartz's repository-relative content directory, including custom directories. |
+| `contentRoot` | Omit to use Quartz's content directory. An override must match its actual `--directory`. |
 | `contentDir` | `<contentRoot>/posts`; must be inside contentRoot. |
 | `exclude` | Quartz's ignorePatterns; literal names or relative glob patterns. |
 | `template` | Frontmatter title, today's `{{date}}`, `draft: false`, empty body. |

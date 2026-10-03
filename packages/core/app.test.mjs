@@ -12,6 +12,10 @@ function memory() { const map = new Map(); return { getItem: key => map.get(key)
 async function fixture({ storage = memory(), createEditor, deniedRead = false } = {}) {
   const { window, document } = parseHTML('<html><body><main id="app"></main></body></html>');
   globalThis.document = document;
+  // linkedom has no browser focus manager; record focus transitions explicitly.
+  let active = document.body;
+  Object.defineProperty(document, 'activeElement', { get: () => active });
+  window.HTMLElement.prototype.focus = function () { active = this; };
   const root = document.querySelector('main');
   const files = new Map(['a', 'b'].map(name => [`notes/posts/${name}.md`, { text: text(name.toUpperCase()), sha: name }]));
   const calls = [];
@@ -31,14 +35,15 @@ async function fixture({ storage = memory(), createEditor, deniedRead = false } 
   const fakeEditor = async (node, session, callbacks) => {
     node.textContent = session.text;
     sessions.push({ session, callbacks }); callbacks.onReady();
-    return { async destroy() {}, setBusy() {} };
+    return { async destroy() {}, setBusy() {}, focus() { node.focus(); } };
   };
   // Native <dialog> is exercised in browser; this DOM fixture keeps the same open/close contract.
   const mounted = mountDuckposting(root, config, { storage, request, createEditor: createEditor || fakeEditor });
   for (const dialog of root.querySelectorAll('dialog')) { dialog.showModal = () => dialog.open = true; dialog.close = () => dialog.open = false; }
   const destroy = await mounted; await settle();
-  const click = async selector => { root.querySelector(selector).dispatchEvent(new window.Event('click')); await settle(); };
-  return { root, storage, destroy, click, files, calls, sessions };
+  const click = async selector => { const node = root.querySelector(selector); node.focus(); node.dispatchEvent(new window.Event('click')); await settle(); };
+  const cancel = async selector => { root.querySelector(selector).dispatchEvent(new window.Event('cancel', { cancelable: true })); await settle(); };
+  return { root, storage, destroy, click, cancel, document, files, calls, sessions };
 }
 test('exact-document recovery offers local changes for A but not B; Publish changes only A', async () => {
   const storage = memory(); storage.setItem(prefix + 'token', 'fake');
@@ -88,4 +93,68 @@ test('initial fetch can be aborted immediately when the writer is removed', asyn
   } });
   for (const dialog of document.querySelectorAll("dialog")) dialog.close = () => {};
   await destroy(); assert.equal(pendingSignal.aborted, true);
+});
+
+test('Escape cancels exact-document recovery without loading repository and restores its Edit button', async () => {
+  const storage = memory(); storage.setItem(prefix + 'token', 'fake');
+  draftStore(config, storage).save({ id: 'notes/posts/a.md', path: 'notes/posts/a.md', sha: 'a', text: text('Keep local A') });
+  const f = await fixture({ storage });
+  try {
+    const trigger = f.root.querySelector('.duck-entry button');
+    await f.click('.duck-entry button');
+    assert.equal(f.root.querySelector('#confirm-dialog').open, true);
+    await f.cancel('#confirm-dialog');
+    assert.equal(f.root.querySelector('#confirm-dialog').open, false);
+    assert.equal(f.document.activeElement, trigger);
+    assert.equal(f.sessions.length, 0);
+    assert.equal(f.calls.filter(call => call.url.includes('/contents/')).length, 0);
+    assert.equal(draftStore(config, storage).drafts['notes/posts/a.md'].text, text('Keep local A'));
+    // A later recovery remains operable; the cancelled promise/listeners were cleaned up.
+    await f.click('.duck-entry button'); await f.click('#confirm-yes');
+    assert.equal(f.sessions.length, 1);
+    assert.equal(f.document.activeElement, f.root.querySelector('#editor'));
+  } finally { await f.destroy(); }
+});
+
+test('Escape cancels Delete, defaults focus to Cancel, and never sends a mutation', async () => {
+  const storage = memory(); storage.setItem(prefix + 'token', 'fake');
+  const f = await fixture({ storage });
+  try {
+    const trigger = f.root.querySelector('.duck-entry button:last-child');
+    await f.click('.duck-entry button:last-child');
+    assert.equal(f.document.activeElement, f.root.querySelector('#confirm-no'));
+    await f.cancel('#confirm-dialog');
+    assert.equal(f.document.activeElement, trigger);
+    assert.equal(f.calls.filter(call => call.method).length, 0);
+    assert.equal(f.files.size, 2);
+  } finally { await f.destroy(); }
+});
+
+test('draft picker Escape returns to New Post, and editor/back move keyboard focus', async () => {
+  const storage = memory(); draftStore(config, storage).save({ id: 'new:one', text: text('Local') });
+  const f = await fixture({ storage });
+  try {
+    await f.click('#new');
+    assert.equal(f.document.activeElement, f.root.querySelector('#choices button'));
+    await f.cancel('#draft-picker');
+    assert.equal(f.root.querySelector('#draft-picker').open, false);
+    assert.equal(f.document.activeElement, f.root.querySelector('#new'));
+    await f.click('#new'); await f.click('#start-new');
+    assert.equal(f.document.activeElement, f.root.querySelector('#editor'));
+    await f.click('#back');
+    assert.equal(f.document.activeElement, f.root.querySelector('#new'));
+  } finally { await f.destroy(); }
+});
+
+test('closing the writer while a restore dialog is open cancels its pending choice', async () => {
+  const storage = memory(); storage.setItem(prefix + 'token', 'fake');
+  draftStore(config, storage).save({ id: 'notes/posts/a.md', path: 'notes/posts/a.md', sha: 'a', text: text('Keep A') });
+  const f = await fixture({ storage });
+  await f.click('.duck-entry button');
+  assert.equal(f.root.querySelector('#confirm-dialog').open, true);
+  await f.destroy(); await settle();
+  assert.equal(f.root.querySelector('#confirm-dialog').open, false);
+  assert.equal(f.sessions.length, 0);
+  assert.equal(f.calls.filter(call => call.url.includes('/contents/')).length, 0);
+  assert.equal(draftStore(config, storage).drafts['notes/posts/a.md'].text, text('Keep A'));
 });

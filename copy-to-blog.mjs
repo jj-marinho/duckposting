@@ -9,6 +9,7 @@ await mkdir(directory, { recursive: true });
 for (const file of ["editor.js", "editor.css", "THIRD_PARTY_LICENSES.txt"]) await copyFile(resolve(project, `dist/${file}`), resolve(directory, file));
 await copyFile(resolve(project, "packages/quartz/index.tsx"), resolve(directory, "index.tsx"));
 await copyFile(resolve(project, "LICENSE"), resolve(directory, "LICENSE"));
+await copyFile(resolve(project, "CHANGELOG.md"), resolve(directory, "CHANGELOG.md"));
 await copyFile(resolve(project, "packages/quartz/README.md"), resolve(directory, "README.md"));
 const { version } = JSON.parse(await readFile(resolve(project, "package.json"), "utf8"));
 await writeFile(resolve(directory, "VERSION"), `${version}\n`);

@@ -63,6 +63,12 @@ export async function mountEditor(root, session, { onChange, onReady }) {
     get("source-toggle").setAttribute("aria-pressed", String(raw));
     get("editor-status").textContent = fieldError || (source ? sourceWarning : "");
   };
+  const focus = () => {
+    if (disposed) return;
+    if (source) post.focus();
+    else if (!title.textContent.trim()) title.focus();
+    else editor?.action(ctx => ctx.get(editorViewCtx).focus());
+  };
   const reset = () => {
     if (disposed) return;
     bodyText = splitDocument(post.value).body;
@@ -93,6 +99,7 @@ export async function mountEditor(root, session, { onChange, onReady }) {
       try { readTitle(post.value); reset(); } catch (error) { get("editor-status").textContent = `Keep using Markdown: ${error.message}`; return; }
     }
     toggleMode(!source);
+    focus();
   });
 
   const autosave = $prose(ctx => new Plugin({
@@ -140,7 +147,7 @@ export async function mountEditor(root, session, { onChange, onReady }) {
     await editor?.destroy();
   };
   if (!root.isConnected) await destroy();
-  return { destroy, setBusy(value) {
+  return { destroy, focus, setBusy(value) {
     busy = value;
     title.contentEditable = busy || !fieldsValid ? "false" : "plaintext-only";
     post.disabled = metadata.disabled = busy;

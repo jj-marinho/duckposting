@@ -26,6 +26,6 @@ Protect recovery, metadata preservation and uncertain responses when changing
 publishing. Native browser checks should use the sandbox. Test an adapter change
 on a clean upstream site as well as the maintained blog.
 
-`npm run package` creates `dist/duckposting-0.1.0.zip`; it needs `zip` on PATH.
+`npm run package` creates `dist/duckposting-<version>.zip`; it needs `zip` on PATH.
 Packaging does not tag, release or publish to npm. Keep per-site configuration
 outside the replaceable `duckposting/` folder.

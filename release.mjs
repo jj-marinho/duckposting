@@ -10,7 +10,7 @@ const stage = join(project, 'dist', `duckposting-${version}`), folder = join(sta
 await rm(stage, { recursive: true, force: true });
 await mkdir(folder, { recursive: true });
 for (const file of ['editor.js', 'editor.css', 'THIRD_PARTY_LICENSES.txt']) await copyFile(join(project, 'dist', file), join(folder, file));
-for (const [source, target] of [['packages/quartz/index.tsx', 'index.tsx'], ['packages/quartz/README.md', 'README.md'], ['LICENSE', 'LICENSE']]) await copyFile(join(project, source), join(folder, target));
+for (const [source, target] of [['packages/quartz/index.tsx', 'index.tsx'], ['packages/quartz/README.md', 'README.md'], ['LICENSE', 'LICENSE'], ['CHANGELOG.md', 'CHANGELOG.md']]) await copyFile(join(project, source), join(folder, target));
 await writeFile(join(folder, 'VERSION'), `${version}\n`);
 const archive = join(project, 'dist', `duckposting-${version}.zip`);
 await rm(archive, { force: true });

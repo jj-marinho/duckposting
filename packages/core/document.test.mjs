@@ -98,7 +98,14 @@ test("body edits always keep frontmatter separated, even without a final newline
 
 test("source mode protects Markdown that rich serialization would rewrite", () => {
   assert.equal(needsSourceMode('Simple post\r\n', 'Simple post\n\n'), false);
+  const document = '---\ntitle: "About"\n---\n\nNothing here is sent to GitHub. Write, edit and publish locally.\n';
+  const originalBody = splitDocument(document).body;
+  assert.equal(needsSourceMode(originalBody, originalBody.slice(1)), false);
+  assert.equal(splitDocument(document).body, originalBody);
+  assert.equal(needsSourceMode('\r\n\r\nOrdinary post\r\n\r\n', 'Ordinary post\n'), false);
   assert.equal(needsSourceMode('[[Internal link]]', '\\[\\[Internal link\\]\\]\n'), true);
   assert.equal(needsSourceMode('| A | B |\n| - | - |', '\\| A \\| B \\|\n\\| - \\| - \\|\n'), true);
   assert.equal(needsSourceMode('Line\n\nNext', 'Line\nNext'), true);
+  assert.equal(needsSourceMode('    indented code\n', 'indented code\n'), true);
+  assert.equal(needsSourceMode('Line  \nNext', 'Line\nNext'), true);
 });

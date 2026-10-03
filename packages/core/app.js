@@ -26,9 +26,9 @@ export async function mountDuckposting(root, options, dependencies = {}) {
       </div></details>
     </div><p id="status" role="status" aria-live="polite"></p>
     <p id="storage-warning" role="status" hidden>Some local data could not be read or saved. Copy your writing before closing this tab.</p></div>
-    <dialog id="draft-picker"><h2>Continue a draft?</h2><div id="choices"></div>
+    <dialog id="draft-picker" aria-labelledby="draft-picker-title"><h2 id="draft-picker-title">Continue a draft?</h2><div id="choices"></div>
       <button id="start-new">Start a new post</button> <button id="cancel-picker">Cancel</button></dialog>
-    <dialog id="confirm-dialog"><h2 id="confirm-title"></h2><p id="confirm-description"></p>
+    <dialog id="confirm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-description"><h2 id="confirm-title"></h2><p id="confirm-description"></p>
       <button id="confirm-yes"></button> <button id="confirm-no"></button></dialog>`;
   const get = id => root.querySelector(`#${id}`);
   const controller = new AbortController(), { signal } = controller;
@@ -41,7 +41,7 @@ export async function mountDuckposting(root, options, dependencies = {}) {
   token.value = store.token() || '';
   get('remember').checked = Boolean(token.value);
   const api = github(config, () => token.value.trim(), request, { signal });
-  let published = [], files = null, session, editor, busy = false, ready = false, disposed = false, viewTicket = 0;
+  let published = [], files = null, session, editor, busy = false, ready = false, disposed = false, viewTicket = 0, focusIndex = false;
   const status = text => { if (!disposed) get('status').textContent = text; };
   const titleOf = text => { try { return readTitle(text) || 'Untitled'; } catch { return 'Untitled'; } };
   const entries = () => contentEntries(config, published, files, store);
@@ -83,6 +83,7 @@ export async function mountDuckposting(root, options, dependencies = {}) {
     busy = value;
     get('back').disabled = get('new').disabled = get('connect').disabled = get('forget').disabled = token.disabled = get('remember').disabled = value;
     editor?.setBusy(value); updatePublish(); renderIndex();
+    if (!value && focusIndex) { focusIndex = false; get('new').focus(); }
   }
   async function refresh() {
     if (!token.value.trim()) return;
@@ -112,6 +113,7 @@ export async function mountDuckposting(root, options, dependencies = {}) {
       if (disposed || ticket !== viewTicket) { await mounted.destroy(); return; }
       editor = mounted; ready = true;
     } finally { if (!disposed && ticket === viewTicket) setBusy(false); }
+    if (!disposed && ticket === viewTicket) editor?.focus?.();
   }
   async function back() {
     ++viewTicket;
@@ -121,24 +123,38 @@ export async function mountDuckposting(root, options, dependencies = {}) {
     if (disposed) return;
     get('editor').hidden = get('back').hidden = get('publish').hidden = true;
     get('index').hidden = get('new').hidden = false; renderIndex();
+    if (busy) focusIndex = true; else get('new').focus();
   }
   function choose(title, description, yes, no) {
     const dialog = get('confirm-dialog');
+    const trigger = root.ownerDocument.activeElement;
     get('confirm-title').textContent = title; get('confirm-description').textContent = description;
     get('confirm-yes').textContent = yes; get('confirm-no').textContent = no;
     return new Promise(resolve => {
-      const finish = value => { dialog.close(); cleanup(); resolve(value); };
+      let finished = false;
+      const finish = value => {
+        if (finished) return;
+        finished = true; cleanup(); dialog.close();
+        if (!disposed && trigger?.isConnected) trigger.focus();
+        resolve(value);
+      };
       const accept = () => finish(true), decline = () => finish(false);
-      const cleanup = () => { get('confirm-yes').removeEventListener('click', accept); get('confirm-no').removeEventListener('click', decline); dialog.removeEventListener('cancel', decline); signal.removeEventListener('abort', decline); };
-      get('confirm-yes').addEventListener('click', accept, { signal }); get('confirm-no').addEventListener('click', decline, { signal }); dialog.addEventListener('cancel', decline, { signal });
-      signal.addEventListener('abort', decline, { once: true });
+      const cancel = event => { event.preventDefault?.(); finish(null); };
+      const cleanup = () => { get('confirm-yes').removeEventListener('click', accept); get('confirm-no').removeEventListener('click', decline); dialog.removeEventListener('cancel', cancel); dialog.removeEventListener('close', cancel); signal.removeEventListener('abort', cancel); };
+      get('confirm-yes').addEventListener('click', accept, { signal }); get('confirm-no').addEventListener('click', decline, { signal }); dialog.addEventListener('cancel', cancel, { signal }); dialog.addEventListener('close', cancel, { signal });
+      signal.addEventListener('abort', cancel, { once: true });
       dialog.showModal();
+      get('confirm-no').focus();
     });
   }
   async function edit(entry) {
     if (busy) return;
     const local = store.drafts[entry.path];
-    if (local && await choose('Resume local changes?', `Saved changes for “${titleOf(local.text)}”.`, 'Use local draft', 'Use repository version')) return open(local);
+    if (local) {
+      const choice = await choose('Resume local changes?', `Saved changes for “${titleOf(local.text)}”.`, 'Use local draft', 'Use repository version');
+      if (choice === null) return;
+      if (choice) return open(local);
+    }
     if (disposed) return;
     if (!token.value.trim()) { get('connection').open = true; token.focus(); status('Connect GitHub to read the Markdown for this document.'); return; }
     setBusy(true);
@@ -157,6 +173,7 @@ export async function mountDuckposting(root, options, dependencies = {}) {
       store.forget(entry.path); store.mark(entry.path, null);
       files = (files || entries()).filter(file => file.path !== entry.path);
       status('Deleted from GitHub. The blog updates after its build finishes.');
+      focusIndex = true;
     } catch (error) { status(`Deletion not confirmed. ${error.message} Local changes are kept.`); }
     finally { setBusy(false); }
   }
@@ -172,12 +189,16 @@ export async function mountDuckposting(root, options, dependencies = {}) {
           get('draft-picker').close();
           if (await choose('Discard this local draft?', 'This only removes the browser copy. No GitHub file is changed.', 'Discard draft', 'Cancel')) store.forget(draft.id);
           renderIndex();
+          get('new').focus();
         })); choices.append(row);
     }
     for (const entry of entries().filter(entry => entry.draft)) {
       const row = document.createElement('p'); row.append(button(`Repository draft: ${entry.title}`, () => { get('draft-picker').close(); edit(entry); })); choices.append(row);
     }
-    if (choices.children.length) get('draft-picker').showModal(); else startNew();
+    if (choices.children.length) {
+      get('draft-picker').showModal();
+      choices.querySelector('button').focus();
+    } else startNew();
   });
   function startNew() {
     get('draft-picker').close();
@@ -185,11 +206,16 @@ export async function mountDuckposting(root, options, dependencies = {}) {
     return open({ id: `new:${crypto.randomUUID()}`, text: config.template.replaceAll('{{date}}', date) });
   }
   on(get('start-new'), 'click', startNew);
-  on(get('cancel-picker'), 'click', () => get('draft-picker').close());
+  const cancelPicker = event => { event.preventDefault?.(); get('draft-picker').close(); if (!disposed) get('new').focus(); };
+  on(get('cancel-picker'), 'click', cancelPicker);
+  on(get('draft-picker'), 'cancel', cancelPicker);
   on(get('back'), 'click', () => { if (!busy) return back(); });
   function saveToken() { store.token(get('remember').checked ? token.value.trim() : null); updatePublish(); renderIndex(); }
   on(token, 'input', saveToken); on(get('remember'), 'change', saveToken);
-  on(get('connect'), 'click', async () => { saveToken(); await refresh(); get('connection').open = false; });
+  on(get('connect'), 'click', async () => {
+    saveToken(); await refresh();
+    if (!disposed) { get('connection').open = false; get('connection').querySelector('summary').focus(); }
+  });
   on(get('forget'), 'click', () => { token.value = ''; get('remember').checked = false; files = null; saveToken(); });
   on(get('publish'), 'click', async () => {
     if (get('publish').disabled) return;

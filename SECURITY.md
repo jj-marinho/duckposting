@@ -1,7 +1,7 @@
 # Security
 
-Supported version: the current alpha candidate on main. Versioned support policy
-will follow the first public release. Do not deploy an unreviewed bundle from an
+Supported version: the latest alpha release (currently 0.1.0-alpha.1).
+Do not deploy an unreviewed bundle from an
 untrusted source; editor code can read the PAT entered on its origin.
 
 The static page does not grant GitHub permission. Use a fine-grained token for
@@ -10,10 +10,9 @@ localStorage is opt-in and trusts every script on the same origin. No browser
 storage encryption can isolate a token from those scripts.
 
 Never include tokens or private posts in public issues. For vulnerabilities,
-use GitHub's private vulnerability report button if it is enabled. If absent,
-open a public issue requesting a private reporting channel without including
-exploit details or secrets. A SECURITY.md file does not enable private reporting;
-the maintainer must enable it in repository settings before the public launch.
+use [Report a vulnerability](https://github.com/jj-marinho/duckposting/security/advisories/new).
+Private vulnerability reporting is enabled for this repository. Include a
+reproduction, affected version and impact without using live credentials.
 
 Report ordinary credential errors through support with secrets removed. If a
 PAT was exposed, revoke it through GitHub and create a replacement.

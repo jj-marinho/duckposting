@@ -74,6 +74,6 @@ export function joinDocument(frontmatter, body) {
 
 // A conservative warning, rather than a growing list of builder-specific syntax.
 export function needsSourceMode(original, serialized) {
-  const normalize = text => text.replace(/\r\n/g, '\n').replace(/\n+$/, '');
+  const normalize = text => text.replace(/\r\n/g, '\n').replace(/^\n+|\n+$/g, '');
   return normalize(original) !== normalize(serialized);
 }
