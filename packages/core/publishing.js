@@ -1,6 +1,6 @@
-import { filename } from "./document.js";
+import { filename, splitDocument } from "./document.js";
 
-export function connectPublishing(root, config, { signal, onReset = () => {}, onBusy = () => {} } = {}) {
+export function connectPublishing(root, config, { signal, onReset = () => {}, onBusy = () => {}, canSync = () => true } = {}) {
   const post = root.querySelector("#post");
   const token = root.querySelector("#token");
   const remember = root.querySelector("#remember");
@@ -8,6 +8,14 @@ export function connectPublishing(root, config, { signal, onReset = () => {}, on
   const status = root.querySelector("#status");
   // Keep the V0 keys so installed users retain their drafts and credentials.
   const namespace = `duck:${config.repository}:${config.branch}:${config.contentDir}:`;
+
+  let busy = false;
+  function updateSync() {
+    let valid = false;
+    try { filename(post.value); valid = Boolean(splitDocument(post.value).body.trim()); } catch {}
+    sync.disabled = busy || !canSync() || !valid || !token.value.trim() || config.repository === "YOUR-USERNAME/YOUR-BLOG";
+    sync.title = sync.disabled ? "Add a title and content, then connect GitHub." : "Save a new post to GitHub";
+  }
 
   function storage(key, value) {
     try {
@@ -34,6 +42,7 @@ export function connectPublishing(root, config, { signal, onReset = () => {}, on
 
   function saveToken() {
     storage("token", remember.checked ? token.value.trim() : null);
+    updateSync();
   }
 
   function saved(url, text) {
@@ -52,7 +61,7 @@ export function connectPublishing(root, config, { signal, onReset = () => {}, on
   post.value = storage("draft") ?? newPost();
   token.value = storage("token") || "";
   remember.checked = Boolean(token.value);
-  post.addEventListener("input", () => storage("draft", post.value), { signal });
+  post.addEventListener("input", () => { storage("draft", post.value); updateSync(); }, { signal });
   token.addEventListener("input", saveToken, { signal });
   remember.addEventListener("change", saveToken, { signal });
   root.querySelector("#forget").addEventListener("click", () => {
@@ -61,6 +70,7 @@ export function connectPublishing(root, config, { signal, onReset = () => {}, on
     saveToken();
   }, { signal });
 
+  updateSync();
   sync.addEventListener("click", async () => {
     if (sync.disabled) return;
     const text = post.value;
@@ -87,6 +97,7 @@ export function connectPublishing(root, config, { signal, onReset = () => {}, on
 
     storage("draft", text);
     saveToken();
+    busy = true;
     sync.disabled = post.disabled = true;
     onBusy(true);
     status.textContent = "Syncing…";
@@ -135,8 +146,10 @@ export function connectPublishing(root, config, { signal, onReset = () => {}, on
       }
       if (!recovered) status.textContent = `Not confirmed saved. ${error.message} Your draft is kept.`;
     } finally {
-      sync.disabled = post.disabled = false;
+      busy = post.disabled = false;
+      updateSync();
       onBusy(false);
     }
   }, { signal });
+  return updateSync;
 }

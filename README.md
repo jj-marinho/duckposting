@@ -67,8 +67,11 @@ until a second integration actually needs it.
 
 ## Writing and syncing
 
-Type in the rich editor, use Markdown shortcuts or the small formatting toolbar.
-**Markdown** switches to the full source textarea. **Post settings** exposes
+Type in the rich editor, use familiar Markdown typing and keyboard commands.
+**Markdown** switches to the full source textarea; the mode toggle stays in
+the same position. The GitHub icon beside **Sync** opens connection settings.
+Sync stays disabled until the editor is ready and the post has a valid title,
+body content and a token. **Post settings** exposes
 frontmatter; unknown metadata fields remain alongside title/date/draft.
 Code blocks have a trailing paragraph: **Enter** adds a code line;
 **⌘/Ctrl+Enter** continues in a paragraph below. **Down Arrow** from the last

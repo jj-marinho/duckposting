@@ -107,7 +107,7 @@ test("empty, missing, or invalid frontmatter titles are rejected without a reque
     await app.click("sync");
     assert.equal(app.calls.length, 0);
     assert.equal(app.get("post").value, markdown);
-    assert.match(app.get("status").textContent, /frontmatter title/);
+    assert.equal(app.get("sync").disabled, true);
   }
 });
 
@@ -173,7 +173,7 @@ test("repeated clicks send only one create request", async () => {
   assert.equal(app.get("post").disabled, true);
   finish(created());
   await first;
-  assert.equal(app.get("sync").disabled, false);
+  assert.equal(app.get("sync").disabled, true);
 });
 
 test("blocked storage shows a notice without preventing writing or sync", async () => {
@@ -219,4 +219,20 @@ test("an older in-flight save does not remove a newer draft", async () => {
   finish(created());
   await pending;
   assert.equal(app.values.get(draftKey), text + "A newer draft.\n");
+});
+
+
+test("Sync requires a title, body and token, and Forget disables it", () => {
+  const app = editor();
+  assert.equal(app.get("sync").disabled, true);
+  app.input("post", text);
+  assert.equal(app.get("sync").disabled, true);
+  app.input("token", "fake-test-token");
+  assert.equal(app.get("sync").disabled, false);
+  app.input("post", '---\ntitle: "Only metadata"\n---\n\n');
+  assert.equal(app.get("sync").disabled, true);
+  app.input("post", text);
+  assert.equal(app.get("sync").disabled, false);
+  app.click("forget");
+  assert.equal(app.get("sync").disabled, true);
 });
