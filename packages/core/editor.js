@@ -8,7 +8,7 @@ import { splitDocument, readTitle, setTitle, isDraft, setDraft, readDate, setDat
 import "@milkdown/kit/prose/view/style/prosemirror.css";
 import "./style.css";
 import { mathPlugins } from "./math.js";
-import { imageURL, imageMarkdown } from "./images.js";
+import { imageURL, imageMarkdown, parseImage } from "./images.js";
 import katex from "katex";
 
 // Host provides the article-shaped root. All controls stay inside this instance.
@@ -170,7 +170,11 @@ export async function mountEditor(root, session, { onChange, onReady, imageSourc
   });
   on(get("cancel-image"), "click", () => { get("image-dialog").close(); focus(); });
   on(get("image-dialog"), "cancel", event => { if (busy) event.preventDefault(); else focus(); });
-  const images = $view(imageSchema.node, () => (node) => {
+  const imageNodes = imageSchema.extendSchema(original => ctx => {
+    const spec = original(ctx);
+    return { ...spec, parseMarkdown: { ...spec.parseMarkdown, runner: parseImage } };
+  });
+  const images = $view(imageNodes.node, () => (node) => {
     const dom = document.createElement("span"), img = document.createElement("img"), error = document.createElement("small");
     dom.className = "duck-image"; dom.contentEditable = "false"; error.hidden = true;
     let ticket = 0;
@@ -197,7 +201,7 @@ export async function mountEditor(root, session, { onChange, onReady, imageSourc
     editor = Editor.make().config(ctx => {
       ctx.set(rootCtx, body);
       ctx.set(defaultValueCtx, splitDocument(post.value).body);
-    }).use(commonmark).use(mathPlugins(editMath)).use(images).use(history).use(trailing).use(autosave);
+    }).use(commonmark.filter(plugin => !imageSchema.includes(plugin))).use(imageNodes).use(mathPlugins(editMath)).use(images).use(history).use(trailing).use(autosave);
     await editor.create();
     const view = editor.action(ctx => ctx.get(editorViewCtx));
     view.dom.setAttribute("role", "textbox");

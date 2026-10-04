@@ -40,3 +40,8 @@ export function imageTarget(config, src, postPath, paths = []) {
 export function imageMarkdown(src, alt = '') {
   return `![${alt.replace(/[\r\n]/g, ' ').replace(/[\\[\]]/g, '\\$&')}](<${imageURL(src).replace(/>/g, '%3E').replace(/</g, '%3C')}>)`;
 }
+
+// CommonMark omits optional image strings; Milkdown's schema validates strings.
+export const parseImage = (state, node, type) => state.addNode(type, {
+  src: node.url, alt: node.alt ?? '', title: node.title ?? '',
+});

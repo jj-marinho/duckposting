@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.0-alpha.5 — unpublished
+
+- Fix reopening standard Markdown images without an optional title. Milkdown
+  rejected null titles and silently removed image nodes from the rich preview.
+
 ## 0.1.0-alpha.4 — unpublished
 
 - Inline and block LaTeX preview, with click-to-edit equations.

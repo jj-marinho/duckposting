@@ -37,3 +37,23 @@ test('binary upload reconciles a lost response without overwrite or another comm
   await assert.rejects(api.saveImage('notes/posts/a.png',original),/directory/);
   await assert.rejects(api.saveImage('notes/private/a.png',original),/outside/);
 });
+
+test('saved untitled Markdown images satisfy the actual Milkdown schema', async () => {
+  const { imageSchema } = await import('@milkdown/kit/preset/commonmark');
+  const { Ctx, Container, Clock } = await import('@milkdown/ctx');
+  const { Schema } = await import('@milkdown/kit/prose/model');
+  const { parseImage } = await import('./images.js');
+  const ctx = new Ctx(new Container(), new Clock());
+  imageSchema.ctx(ctx);
+  const spec = ctx.get(imageSchema.key)(ctx);
+  const schema = new Schema({ nodes: { doc: { content: 'image*' }, text: {}, image: spec } });
+  for (const title of [null, undefined, 'Optional caption']) {
+    let saved;
+    parseImage({ addNode(type, attrs) { saved = type.createAndFill(attrs); } },
+      { url: 'images/photo.jpeg', alt: 'Phone photo', title }, schema.nodes.image);
+    assert(saved, 'The parser must keep the image, rather than an empty paragraph');
+    assert.equal(saved.attrs.src, 'images/photo.jpeg');
+    assert.equal(saved.attrs.alt, 'Phone photo');
+    assert.equal(saved.attrs.title, title ?? '');
+  }
+});
