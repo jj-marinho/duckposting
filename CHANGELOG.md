@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.0-alpha.4 — unpublished
+
+- Inline and block LaTeX preview, with click-to-edit equations.
+- Image URLs and raster file uploads with immediate repository preview.
+- Binary uploads reconcile uncertain responses; existing files cannot be overwritten.
+- Quartz asset mapping and bundled KaTeX fonts work with site URL prefixes.
+
 ## 0.1.0-alpha.3 — unpublished
 
 - Writing comes first: title, editable date and body above the control panel.

@@ -9,7 +9,7 @@ const text = title => `---\ntitle: "${title}"\ndraft: false\n---\n\nBody`;
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status });
 const settle = async () => { for (let i = 0; i < 6; i++) await new Promise(resolve => setImmediate(resolve)); };
 function memory() { const map = new Map(); return { getItem: key => map.get(key) ?? null, setItem: (key, value) => map.set(key, value), removeItem: key => map.delete(key) }; }
-async function fixture({ storage = memory(), createEditor, deniedRead = false } = {}) {
+async function fixture({ storage = memory(), createEditor, deniedRead = false, deniedWrite = false } = {}) {
   const { window, document } = parseHTML('<html><body><main id="app"></main></body></html>');
   globalThis.document = document;
   // linkedom has no browser focus manager; record focus transitions explicitly.
@@ -26,6 +26,7 @@ async function fixture({ storage = memory(), createEditor, deniedRead = false } 
     const path = decodeURIComponent(new URL(url).pathname.split('/contents/')[1]);
     const file = files.get(path);
     if (!options.method) return deniedRead || !file ? json({}, 404) : json({ content: Buffer.from(file.text).toString('base64'), sha: file.sha });
+    if (deniedWrite) return json({ message: 'Denied' }, 403);
     const data = JSON.parse(options.body);
     if (options.method === 'DELETE') files.delete(path);
     else files.set(path, { text: Buffer.from(data.content, 'base64').toString(), sha: 'new' });
@@ -157,4 +158,29 @@ test('closing the writer while a restore dialog is open cancels its pending choi
   assert.equal(f.sessions.length, 0);
   assert.equal(f.calls.filter(call => call.url.includes('/contents/')).length, 0);
   assert.equal(draftStore(config, storage).drafts['notes/posts/a.md'].text, text('Keep A'));
+});
+
+test('denied image uploads preserve exact-document writing and release Publish', async () => {
+  const storage = memory(); storage.setItem(prefix + 'token', 'fake');
+  const f = await fixture({ storage, deniedWrite: true });
+  try {
+    await f.click('.duck-entry:nth-child(1) button');
+    const callbacks = f.sessions[0].callbacks;
+    callbacks.onChange(text('Keep my writing'));
+    await assert.rejects(callbacks.uploadImage(new File(['image bytes'], 'photo.png')), /Denied/);
+    assert.equal(draftStore(config, storage).drafts['notes/posts/a.md'].text, text('Keep my writing'));
+    assert.equal(f.root.querySelector('#publish').disabled, false);
+    assert.match(f.root.querySelector('#status').textContent, /writing is kept/);
+  } finally { await f.destroy(); }
+});
+test('closed editor image callbacks cannot commit files', async () => {
+  const storage = memory(); storage.setItem(prefix + 'token', 'fake');
+  const f = await fixture({ storage });
+  try {
+    await f.click('.duck-entry:nth-child(1) button');
+    const callbacks = f.sessions[0].callbacks;
+    await f.click('#back');
+    await assert.rejects(callbacks.uploadImage(new File(['bytes'], 'photo.png')), /closed/);
+    assert.equal(f.calls.filter(call => call.method === 'PUT').length, 0);
+  } finally { await f.destroy(); }
 });

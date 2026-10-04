@@ -28,8 +28,10 @@ await writeFile(join(checkout, 'quartz.config.yaml'), stringify(config));
 await writeFile(join(checkout, 'quartz.ts'), `import { loadQuartzConfig, loadQuartzLayout } from "./quartz/plugins/loader/config-loader"\nimport { duckposting } from "duckposting"\nconst config = await loadQuartzConfig()\nduckposting(config, { repository: "example/fixture" })\nexport default config\nexport const layout = await loadQuartzLayout()\n`);
 await mkdir(join(checkout, 'notes/posts'), { recursive: true });
 await writeFile(join(checkout, 'notes/index.md'), '---\ntitle: Release fixture\n---\n\nA fixture page.\n');
-await writeFile(join(checkout, 'notes/posts/published.md'), '---\ntitle: Published fixture\ndraft: false\n---\n\nPublished content.\n');
+await writeFile(join(checkout, 'notes/posts/published.md'), '---\ntitle: Published fixture\ndraft: false\n---\n\nPublished content. Inline $E=mc^2$.\n\n$$\nx^2 + y^2 = z^2\n$$\n\n![Fixture](images/fixture.png)\n');
 await writeFile(join(checkout, 'notes/posts/draft.md'), '---\ntitle: Secret fixture title\ndraft: true\n---\n\nSecret fixture content.\n');
+await mkdir(join(checkout, 'notes/images'), { recursive: true });
+await writeFile(join(checkout, 'notes/images/fixture.png'), Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=', 'base64'));
 const savedConfig = await readFile(join(checkout, 'quartz.config.yaml'));
 const savedTS = await readFile(join(checkout, 'quartz.ts'));
 const archiveName = basename(archive);
@@ -50,6 +52,15 @@ for (const round of ['install', 'replacement']) {
     const html = await readFile(join(output, 'write/index.html'), 'utf8');
     assert(html.includes('/garden/duckposting/editor.js?v='));
     assert(html.includes('&quot;contentRoot&quot;:&quot;notes&quot;'));
+    assert(html.includes('&quot;path&quot;:&quot;notes/images/fixture.png&quot;'));
+    assert(html.includes('/garden/images/fixture.png'));
+    const published = await readFile(join(output, 'posts/published.html'), 'utf8');
+    assert(published.includes('katex'), 'Published equations must render');
+    assert(published.includes('fixture.png'), 'Published images must render');
+    const css = await readFile(join(stage, 'dist/editor.css'), 'utf8');
+    for (const match of css.matchAll(/url\(["']?(?:\.\/)?(fonts\/[^)"']+)/g)) {
+      assert.deepEqual(await readFile(join(output, 'duckposting', match[1])), await readFile(join(stage, 'dist', match[1])));
+    }
     const index = JSON.parse(await readFile(join(output, 'duckposting/content.json'), 'utf8'));
     assert.deepEqual(index.map(file => file.path).sort(), ['notes/index.md', 'notes/posts/published.md']);
     assert(!JSON.stringify(index).includes('Secret'));

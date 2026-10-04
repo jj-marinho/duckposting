@@ -15,11 +15,11 @@ npm ci
 npm run package
 ```
 
-Copy `dist/duckposting-0.1.0-alpha.3.tgz` into your blog's `vendor/` directory,
+Copy `dist/duckposting-0.1.0-alpha.4.tgz` into your blog's `vendor/` directory,
 then run from the blog:
 
 ```sh
-npm install ./vendor/duckposting-0.1.0-alpha.3.tgz
+npm install ./vendor/duckposting-0.1.0-alpha.4.tgz
 ```
 
 Commit the archive, package.json and package-lock.json so your host's `npm ci`
@@ -82,6 +82,7 @@ changing their title keeps their path/URL. Delete requires confirmation.
 | `branch` | `main`. |
 | `contentRoot` | Omit to use Quartz's content directory. An override must match its actual `--directory`. |
 | `contentDir` | `<contentRoot>/posts`; must be inside contentRoot. |
+| `imageDir` | `<contentRoot>/images`; uploads must stay inside contentRoot. |
 | `exclude` | Quartz's ignorePatterns; literal names or relative glob patterns. |
 | `template` | Frontmatter title, today's `{{date}}`, `draft: false`, empty body. |
 
@@ -103,7 +104,19 @@ include components and layouts; they are not necessarily CSS-only. A selector
 like `article > p` needs `article .ProseMirror > p` for the rich editor's wrapper.
 No copied theme, automatic CSS rewriting or exact renderer preview is promised.
 
-Rich editing uses CommonMark. If a roundtrip would change existing Markdown,
+Rich editing uses CommonMark plus `$…$` inline math and `$$…$$` block math.
+Enable Quartz's `@quartz-community/latex` transformer with `renderEngine: katex`
+for equations on published pages; the editor renders them with KaTeX. This is
+math notation, not a full LaTeX document compiler. Escape `\$` for literal dollars.
+
+Use Image below the body to insert a URL or upload a raster image (10 MB max).
+Files are committed immediately to `imageDir` with unique filenames. The post
+stores ordinary `![alt](images/file.png)` Markdown, never a temporary blob URL.
+The editor can preview repository images before the site rebuilds. Quartz's
+asset URLs and site prefixes are respected. Uploads may be public even for draft
+posts; discarding or deleting a post does not remove its image files.
+
+If a roundtrip would change existing Markdown,
 Duckposting opens source mode; choosing Rich explicitly allows conversion when
 you edit. This can include harmless formatting differences. Use source for
 wikilinks, callouts, embeds, GFM extensions or builder-specific syntax.

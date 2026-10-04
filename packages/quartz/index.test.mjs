@@ -4,7 +4,8 @@ import { transform } from 'esbuild';
 import { readFile, mkdir, writeFile, mkdtemp, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-const { code } = await transform(await readFile(new URL('./index.tsx', import.meta.url), 'utf8'), { loader: 'tsx', format: 'esm', jsxFactory: '__jsx', jsxFragment: '__Fragment' });
+let { code } = await transform(await readFile(new URL('./index.tsx', import.meta.url), 'utf8'), { loader: 'tsx', format: 'esm', jsxFactory: '__jsx', jsxFragment: '__Fragment' });
+code = code.replace(/from "@quartz-community\/utils\/path"/, `from ${JSON.stringify(import.meta.resolve("@quartz-community/utils/path"))}`);
 const { duckposting } = await import(`data:text/javascript;base64,${Buffer.from('const __Fragment = \"fragment\"; const __jsx = (tag, props, ...children) => ({ tag, props, children });\n' + code).toString('base64')}`);
 test('Quartz index includes only real Markdown files, never virtual pages or full text', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'duck-adapter-'));

@@ -13,15 +13,16 @@ export function demoRepository(storage) {
   const encode = text => { let binary = ''; for (const byte of new TextEncoder().encode(text)) binary += String.fromCharCode(byte); return btoa(binary); };
   const json = (data, status = 200) => new Response(JSON.stringify(data), { status });
   const request = async (url, options = {}) => {
-    if (url === '/demo-content.json') return json(Object.entries(files).filter(([, file]) => !isDraft(file.text)).map(([path, file]) => ({ path, title: readTitle(file.text), draft: false })));
+    if (url === '/demo-content.json') return json(Object.entries(files).filter(([path, file]) => path.endsWith('.md') && !isDraft(file.text)).map(([path, file]) => ({ path, title: readTitle(file.text), draft: false })));
     if (!url.startsWith('https://api.github.com/repos/demo/local/')) throw new Error('The sandbox refuses network requests.');
     if (url.includes('/git/trees/')) return json({ tree: Object.entries(files).map(([path, file]) => ({ path, sha: file.sha, type: 'blob', mode: '100644' })) });
     const path = decodeURIComponent(new URL(url).pathname.split('/contents/')[1]), file = files[path];
+    if (!options.method && options.headers?.Accept === 'application/vnd.github.raw+json') return file ? new Response(Uint8Array.from(atob(file.base64 || encode(file.text)), char => char.charCodeAt(0))) : json({}, 404);
     if (!options.method) return file ? json({ type: 'file', encoding: 'base64', content: encode(file.text), sha: file.sha }) : json({}, 404);
     const data = JSON.parse(options.body);
     if (file ? data.sha !== file.sha : Boolean(data.sha)) return json({ message: 'A file with this name already exists.' }, 422);
     if (options.method === 'DELETE') delete files[path];
-    else files[path] = { text: new TextDecoder().decode(Uint8Array.from(atob(data.content), char => char.charCodeAt(0))), sha: crypto.randomUUID() };
+    else files[path] = path.endsWith('.md') ? { text: new TextDecoder().decode(Uint8Array.from(atob(data.content), char => char.charCodeAt(0))), sha: crypto.randomUUID() } : { base64: data.content, sha: crypto.randomUUID() };
     persist();
     return json({ content: files[path] || null, commit: { html_url: '#sandbox' } });
   };

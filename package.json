@@ -1,6 +1,6 @@
 {
   "name": "duckposting",
-  "version": "0.1.0-alpha.3",
+  "version": "0.1.0-alpha.4",
   "private": true,
   "type": "module",
   "workspaces": [
@@ -14,6 +14,7 @@
   },
   "devDependencies": {
     "esbuild": "0.28.2",
+    "github-slugger": "2.0.0",
     "linkedom": "0.18.13"
   },
   "description": "A static, GitHub-backed Markdown editor for Quartz blogs",
@@ -40,10 +41,12 @@
     "packages/quartz/README.md",
     "CHANGELOG.md",
     "SECURITY.md",
-    "SUPPORT.md"
+    "SUPPORT.md",
+    "dist/fonts"
   ],
   "peerDependencies": {
-    "preact": "^10.0.0",
-    "@quartz-community/types": "^1.0.0"
+    "@quartz-community/types": "^1.0.0",
+    "@quartz-community/utils": "^1.0.1",
+    "preact": "^10.0.0"
   }
 }

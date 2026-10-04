@@ -52,3 +52,15 @@
 .duckposting #editor-status:empty, .duckposting #status:empty { display: none; }
 .duckposting .duck-toolbar:has(> button[hidden]:only-child) { display: none; }
 .duckposting #publish { background: var(--dark, #222); color: var(--light, #fff); border-color: transparent; }
+
+.duckposting .duck-insert { display: flex; align-items: center; gap: 1rem; }
+.duckposting #add-image { border-color: transparent; padding-inline: 0; }
+.duckposting dialog label { display: block; margin: .75rem 0 .35rem; }
+.duckposting dialog input[type=text] { box-sizing: border-box; width: 100%; padding: .5rem; border: 1px solid var(--lightgray, #ddd); background: transparent; }
+.duckposting dialog input[type=file] { max-width: 100%; font-size: 13px; }
+.duckposting #body img { max-width: 100%; height: auto; }
+.duckposting .duck-image small { font: 13px/1.5 system-ui, sans-serif; opacity: .7; }
+.duckposting .duck-math { cursor: pointer; }
+.duckposting .duck-math:focus-visible { outline: 2px solid var(--secondary, #36c); outline-offset: 3px; }
+.duckposting .duck-math-block { overflow-x: auto; margin: 1.5rem 0; }
+.duckposting .duck-math .katex-display { margin: 0; }

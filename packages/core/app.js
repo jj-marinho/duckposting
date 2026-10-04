@@ -3,6 +3,7 @@ import { github } from './github.js';
 import { draftStore } from './storage.js';
 import { configuration } from './config.js';
 import { contentEntries, publishedIndex } from './catalog.js';
+import { imagePath, imageTarget } from './images.js';
 
 export async function mountDuckposting(root, options, dependencies = {}) {
   const { request = fetch } = dependencies;
@@ -42,6 +43,7 @@ export async function mountDuckposting(root, options, dependencies = {}) {
   token.value = store.token() || '';
   get('remember').checked = Boolean(token.value);
   const api = github(config, () => token.value.trim(), request, { signal });
+  const imageCache = new Map(), imageURLs = new Set();
   let published = [], files = null, session, editor, busy = false, ready = false, disposed = false, viewTicket = 0, focusIndex = false;
   const status = text => { if (!disposed) get('status').textContent = text; };
   const titleOf = text => { try { return readTitle(text) || 'Untitled'; } catch { return 'Untitled'; } };
@@ -110,6 +112,30 @@ export async function mountDuckposting(root, options, dependencies = {}) {
           current.text = text; store.save(current); updatePublish();
         },
         onReady() {},
+        async imageSource(src) {
+          const target = imageTarget(config, src, current.path, [...api.imagePaths, ...imageCache.keys()]);
+          if (!target.path || !token.value.trim()) return target.url;
+          if (!imageCache.has(target.path)) imageCache.set(target.path, api.readImage(target.path).then(blob => {
+            if (disposed) throw new Error('Editor closed.');
+            const url = URL.createObjectURL(blob); imageURLs.add(url); return url;
+          }).catch(() => { imageCache.delete(target.path); return target.url; }));
+          return imageCache.get(target.path);
+        },
+        async uploadImage(file) {
+          if (disposed || ticket !== viewTicket) throw new Error('Editor closed.');
+          if (busy) throw new Error('Another action is still running.');
+          if (!token.value.trim()) throw new Error('Connect GitHub before uploading an image.');
+          const path = imagePath(config, file);
+          setBusy(true); status('Uploading image…');
+          try {
+            await api.saveImage(path, new Uint8Array(await file.arrayBuffer()));
+            if (disposed) throw new Error('Editor closed.');
+            const url = URL.createObjectURL(file); imageURLs.add(url); imageCache.set(path, Promise.resolve(url));
+            status('Image saved to GitHub. Publish the post when ready.');
+            return path.slice(config.contentRoot.length + 1);
+          } catch (error) { status(`Image upload not confirmed. ${error.message} Your writing is kept.`); throw error; }
+          finally { setBusy(false); }
+        },
       });
       if (disposed || ticket !== viewTicket) { await mounted.destroy(); return; }
       editor = mounted; ready = true;
@@ -254,5 +280,5 @@ export async function mountDuckposting(root, options, dependencies = {}) {
     if (token.value.trim()) await refresh();
   }
   void loadInitial().catch(error => status(error.message));
-  return async () => { disposed = true; ++viewTicket; controller.abort(); get('draft-picker').close(); get('confirm-dialog').close(); await editor?.destroy(); };
+  return async () => { disposed = true; ++viewTicket; controller.abort(); get('draft-picker').close(); get('confirm-dialog').close(); await editor?.destroy(); for (const url of imageURLs) URL.revokeObjectURL(url); };
 }

@@ -53,7 +53,12 @@ Contents read/write for that repository. Remember on this device is opt-in.
   by Quartz. Cloudflare or another host deploys after the GitHub commit.
 - New filenames come from titles, including Unicode letters/numbers. Existing
   documents keep their paths when their titles change.
-- Source preserves renderer-specific Markdown. Rich mode is CommonMark, and
+- Equations use `$…$` inline or `$$…$$` on their own lines; click a rendered
+  equation to edit its LaTeX. Images use standard `![alt](path)` Markdown.
+- The Image button inserts a URL or uploads PNG, JPEG, GIF, WebP or AVIF
+  (up to 10 MB). Uploads commit immediately; publishing the post is separate.
+  Uploaded images can be public even when the post is a draft.
+- Source preserves renderer-specific Markdown. Rich mode is CommonMark plus math, and
   existing source defaults to Markdown if rich serialization would change it.
 
 Local drafts live in one browser/origin. Repository drafts are committed files.
