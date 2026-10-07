@@ -15,11 +15,11 @@ npm ci
 npm run package
 ```
 
-Copy `dist/duckposting-0.1.0-alpha.7.tgz` into your blog's `vendor/` directory,
+Copy `dist/duckposting-0.1.0-alpha.8.tgz` into your blog's `vendor/` directory,
 then run from the blog:
 
 ```sh
-npm install ./vendor/duckposting-0.1.0-alpha.7.tgz
+npm install ./vendor/duckposting-0.1.0-alpha.8.tgz
 ```
 
 Commit the archive, package.json and package-lock.json so your host's `npm ci`
@@ -112,7 +112,7 @@ for equations on published pages; the editor renders them with KaTeX. This is
 math notation, not a full LaTeX document compiler. Escape `\$` for literal dollars.
 
 Type `/` in a paragraph or use **Insert /** below the body. The menu includes
-page/URL links, images, code, equations, tables, bullets and checklists. Choose
+page/URL links, images, code, equations and tables. Choose
 Link page to search the existing catalog by title or path. Draft pages are
 labeled; they become publicly reachable only when published. Links store full
 content-root-relative Markdown paths, resolved by Quartz's link transformer.

@@ -1,7 +1,8 @@
 # Writing commands
 
-Scope: Link page, Link URL, Image, Code block, Math block, Table block,
-Bullet list and Checklist. No heading, quote or divider commands.
+Current menu: Link page, Link URL, Image, Code block, Math block and Table block.
+Alpha.8 removes Bullet list and Checklist from the menu; native Markdown list
+input remains supported. No heading, quote or divider commands.
 
 1. Enable Milkdown GFM for task lists and simple tables. Keep image and math
    extensions and conservative source preservation.

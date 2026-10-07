@@ -57,7 +57,7 @@ Contents read/write for that repository. Remember on this device is opt-in.
   equation to edit its LaTeX. Images use standard `![alt](path)` Markdown.
 - Type `/` in a paragraph, filter and press Enter. **Insert /** opens the same
   menu on touch devices: Link page, Link URL, Image, Code block, Math block,
-  Table block, Bullet list and Checklist. Page search uses titles and paths from
+  and Table block. Page search uses titles and paths from
   the existing catalog; draft pages are labeled. Links keep the full Markdown path.
 - Type `- [ ] ` or `- [x] ` (including the trailing space) to start a checklist.
   Click a checkbox to toggle it; Enter continues the list, Enter on an empty item

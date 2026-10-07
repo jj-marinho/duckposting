@@ -8,8 +8,6 @@ export const commands = [
   { id: 'code', label: 'Code block', search: 'code block', markdown: '```\n\n```' },
   { id: 'math', label: 'Math block', search: 'math block equation latex' },
   { id: 'table', label: 'Table block', search: 'table block', markdown: '| Column 1 | Column 2 |\n| --- | --- |\n|  |  |\n|  |  |', placeholder: 'Column 1' },
-  { id: 'bullet', label: 'Bullet list', search: 'bullet list', markdown: '- Item', placeholder: 'Item' },
-  { id: 'checklist', label: 'Checklist', search: 'checklist task todo', markdown: '- [ ] Item', placeholder: 'Item' },
 ];
 export const matchingCommands = query => commands.filter(command => command.search.includes(query.toLowerCase().trim()));
 export function commandQuery(before) {

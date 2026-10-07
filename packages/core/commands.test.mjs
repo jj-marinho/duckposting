@@ -5,7 +5,7 @@ test('command matching is bounded and does not capture URL paths or escaped slas
   assert.deepEqual(commandQuery('See /link page'), { query: 'link page', length: 10 });
   for (const text of ['https://example.org/', 'foo/bar', '\\/', '/'+ 'a'.repeat(40)]) assert.equal(commandQuery(text),null);
   assert.equal(matchingCommands('link url')[0].id, 'url');
-  assert.deepEqual(commands.map(command=>command.id),['page','url','image','code','math','table','bullet','checklist']);
+  assert.deepEqual(commands.map(command=>command.id),['page','url','image','code','math','table']);
 });
 test('source commands ignore code fences and inline code', () => {
   for (const text of ['```js\n/image','~~~~\n/code block','`/image']) assert.equal(sourceCommandQuery(text,text.length),null);

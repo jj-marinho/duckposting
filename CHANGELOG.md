@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.0-alpha.8 — unpublished
+
+- Remove Bullet list and Checklist from the insert/slash menu. Markdown list
+  input and existing task checkboxes continue to work.
+
 ## 0.1.0-alpha.7 — unpublished
 
 - Click + Row or + Column beneath any rich-editor table to grow it at the bottom
