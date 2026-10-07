@@ -37,7 +37,7 @@ for (const source of ['.', 'docs']) {
   await writeFile(join(site, 'assets/images/example.png'), Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=', 'base64'));
   await prepareJekyll({ repository: 'owner/blog', source });
   const output = join(root, source === '.' ? 'output-root' : 'output-nested');
-  execFileSync(command, ['build', '--safe', ...cacheFlags, '--source', site, '--config', join(site, '_config.yml'), '--destination', output], { stdio: 'pipe' });
+  execFileSync(command, ['build', '--safe', ...cacheFlags, '--source', site, '--config', join(site, '_config.yml'), '--destination', output], { stdio: 'pipe', encoding: 'utf8' });
   const entries = JSON.parse(await readFile(join(output, 'duckposting/content.json'), 'utf8'));
   assert.deepEqual(entries, [{ path: `${source === '.' ? '' : 'docs/'}_posts/2026-01-02-hello.md`, title: 'Olá 🌎', url: '/project/notes/hello/' }]);
   const page = await readFile(join(output, 'write/index.html'), 'utf8');
@@ -57,10 +57,10 @@ for (const source of ['.', 'docs']) {
   const settings = JSON.parse(page.match(/\.\.\.({.*}),/)[1]);
   assert.ok(settings.template.includes('{{date}}'));
   if (source === '.') {
-    execFileSync(command, ['build', '--safe', ...cacheFlags, '--unpublished', '--source', site, '--config', join(site, '_config.yml'), '--destination', output], { stdio: 'pipe' });
+    execFileSync(command, ['build', '--safe', ...cacheFlags, '--unpublished', '--source', site, '--config', join(site, '_config.yml'), '--destination', output], { stdio: 'pipe', encoding: 'utf8' });
     assert.ok(!(await readFile(join(output, 'duckposting/content.json'), 'utf8')).includes('NEVER EMIT'));
     assert.match(await readFile(join(output, 'write/index.html'), 'utf8'), /throw new Error\('Disable unpublished/);
-    execFileSync(command, ['build', '--safe', ...cacheFlags, '--source', site, '--config', join(site, '_config.yml'), '--destination', output], { stdio: 'pipe' });
+    execFileSync(command, ['build', '--safe', ...cacheFlags, '--source', site, '--config', join(site, '_config.yml'), '--destination', output], { stdio: 'pipe', encoding: 'utf8' });
   }
   console.log(`${version}, source ${source}: dated post, draft/future omission, project prefix, image and editor assets passed.`);
 }

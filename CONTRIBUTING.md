@@ -43,3 +43,7 @@ installation, replacement, URL prefixes and draft filtering.
 The Astro and Jekyll smoke scripts accept the same archive and create disposable
 fixtures under the system temporary directory. `npm run build:site` builds the
 Quartz project site from the packed package. No script publishes to npm.
+
+Jekyll smoke checks need the selected Jekyll gem and `kramdown-parser-gfm`;
+Jekyll 3 does not pull that parser into a standalone gem installation. CI installs
+both explicitly. Existing blogs retain their own Gemfile and renderer settings.

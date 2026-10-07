@@ -64,7 +64,9 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.3'
-      - run: gem install jekyll --version "$JEKYLL_VERSION" --no-document
+      - run: |
+          gem install jekyll --version "$JEKYLL_VERSION" --no-document
+          gem install kramdown-parser-gfm --version 1.1.0 --no-document
         env:
           JEKYLL_VERSION: ${{ matrix.version }}
       - uses: actions/download-artifact@v7
