@@ -7,6 +7,7 @@ import { commandMenu } from "./menu.js";
 import { sourceCommandQuery, linkMarkdown, externalLink, matchingPages } from "./commands.js";
 import { transferImages } from './media.js';
 import { tableTools } from './tables.js';
+import { codeTools } from './code.js';
 import { history } from "@milkdown/kit/plugin/history";
 import { trailing } from "@milkdown/kit/plugin/trailing";
 import { $prose, $view, replaceAll } from "@milkdown/kit/utils";
@@ -326,7 +327,7 @@ export async function mountEditor(root, session, { onChange, onReady, imageSourc
     editor = Editor.make().config(ctx => {
       ctx.set(rootCtx, body);
       ctx.set(defaultValueCtx, splitDocument(post.value).body);
-    }).use(commonmark.filter(plugin => !imageSchema.includes(plugin))).use(imageNodes).use(gfm).use(tableTools).use(tasks).use(menu.plugin).use(media).use(mathPlugins(editMath)).use(images).use(history).use(trailing).use(autosave);
+    }).use(commonmark.filter(plugin => !imageSchema.includes(plugin))).use(imageNodes).use(gfm).use(tableTools).use(codeTools).use(tasks).use(menu.plugin).use(media).use(mathPlugins(editMath)).use(images).use(history).use(trailing).use(autosave);
     await editor.create();
     const view = editor.action(ctx => ctx.get(editorViewCtx));
     view.dom.setAttribute("role", "textbox");
@@ -364,7 +365,7 @@ export async function mountEditor(root, session, { onChange, onReady, imageSourc
   return { destroy, focus() { if (!source && !title.textContent.trim()) title.focus(); else focus(); }, setBusy(value) {
     busy = value;
     if (busy) menu.close();
-    for (const control of body.querySelectorAll('input[type=checkbox], .duck-table-tools button')) control.disabled = busy;
+    for (const control of body.querySelectorAll('input[type=checkbox], .duck-table-tools button, .duck-code-language select')) control.disabled = busy;
     title.contentEditable = busy || !fieldsValid ? "false" : "plaintext-only";
     post.disabled = metadata.disabled = busy;
     get("draft-status").disabled = get("post-date").disabled = busy || !fieldsValid;

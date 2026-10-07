@@ -15,11 +15,11 @@ npm ci
 npm run package
 ```
 
-Copy `dist/duckposting-0.1.0-alpha.8.tgz` into your blog's `vendor/` directory,
+Copy `dist/duckposting-0.1.0-alpha.9.tgz` into your blog's `vendor/` directory,
 then run from the blog:
 
 ```sh
-npm install ./vendor/duckposting-0.1.0-alpha.8.tgz
+npm install ./vendor/duckposting-0.1.0-alpha.9.tgz
 ```
 
 Commit the archive, package.json and package-lock.json so your host's `npm ci`
@@ -116,6 +116,11 @@ page/URL links, images, code, equations and tables. Choose
 Link page to search the existing catalog by title or path. Draft pages are
 labeled; they become publicly reachable only when published. Links store full
 content-root-relative Markdown paths, resolved by Quartz's link transformer.
+
+Code blocks have a language picker and save ordinary fenced Markdown. Keep
+Quartz's SyntaxHighlighting transformer enabled for highlighting published code;
+the editor itself shows plain monospaced code. Imported language names and aliases
+stay intact; Markdown mode lets you specify languages outside the picker.
 
 Use Image to insert a URL or upload a raster image (10 MB max). Pasting images
 and dropping image files use the same upload path. In source mode, files insert

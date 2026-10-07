@@ -81,3 +81,8 @@
 .duckposting #body .duck-table table { margin-bottom: .35rem; }
 .duckposting .duck-table-tools { display: flex; gap: .4rem; font: 12px/1.5 system-ui, sans-serif; }
 .duckposting .duck-table-tools button { min-height: 32px; }
+.duckposting .duck-code { margin-block: 1rem; }
+.duckposting .duck-code-language { display: flex; align-items: center; gap: .5rem; font: 12px/1.5 system-ui, sans-serif; }
+.duckposting .duck-code-language select { font: inherit; color: inherit; background: var(--light, #fff); border: 1px solid var(--lightgray, #ddd); border-radius: .25rem; min-height: 32px; padding: .2rem .4rem; }
+.duckposting .duck-code-language select:focus-visible { outline: 2px solid var(--secondary, #36c); outline-offset: 3px; }
+.duckposting #body .duck-code pre { margin-top: .35rem; }

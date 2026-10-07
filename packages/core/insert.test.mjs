@@ -14,6 +14,7 @@ import { insertFragment, sourceFragment } from './insert.js';
 import { commands, linkMarkdown } from './commands.js';
 import { appendTable } from './tables.js';
 import { TableMap } from '@milkdown/kit/prose/tables';
+import { codeLanguage } from './code.js';
 
 const ctx = new Ctx(new Container(), new Clock());
 ctx.inject(nodesCtx, []);
@@ -83,5 +84,22 @@ test('table controls append to their own table, retain alignment/content, focus 
     assert.doesNotThrow(() => parse(serialize(state.doc)).check());
     assert(undo(state, tr => state = state.apply(tr)));
     assert(state.doc.eq(original));
+  }
+});
+test('code language changes retain exact code, cursor and other blocks, serialize and undo once', () => {
+  const original = parse('```haskell\nmain = putStrLn "Olá 🦆"\n```\n\n```python\nprint(1)\n```');
+  let state = EditorState.create({ schema, doc: original, plugins: [history()] });
+  state = state.apply(state.tr.setSelection(TextSelection.create(original, 5)));
+  assert.equal(codeLanguage(state, 0, 'haskell'), null);
+  for (const language of ['javascript', 'cpp', '']) {
+    const changed = state.apply(codeLanguage(state, 0, language));
+    assert.equal(changed.doc.firstChild.attrs.language, language);
+    assert.equal(changed.doc.firstChild.textContent, original.firstChild.textContent);
+    assert(changed.doc.lastChild.eq(original.lastChild));
+    assert.equal(changed.selection.from, state.selection.from);
+    assert(parse(serialize(changed.doc)).eq(changed.doc));
+    let restored = changed;
+    assert(undo(restored, tr => restored = restored.apply(tr)));
+    assert(restored.doc.eq(original));
   }
 });

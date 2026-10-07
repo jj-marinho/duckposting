@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.0-alpha.9 — unpublished
+
+- Choose a language above each code block. The selection saves as the normal
+  Markdown fence language; published highlighting stays with the site renderer.
+- Imported language names and aliases remain intact. Changing a language keeps
+  the code, cursor, other blocks and undo; pickers pause during uploads/publishing.
+
 ## 0.1.0-alpha.8 — unpublished
 
 - Remove Bullet list and Checklist from the insert/slash menu. Markdown list

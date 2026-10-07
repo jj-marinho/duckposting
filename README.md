@@ -64,6 +64,10 @@ Contents read/write for that repository. Remember on this device is opt-in.
   exits it. Tables start with two columns. Use **+ Row** and **+ Column** under
   each table to grow it; the cursor moves into the new cell. Tab moves between
   cells, Enter exits.
+- Each code block has a language picker. Its selection becomes the Markdown
+  fence language (for example, `python`); your site renderer supplies published
+  syntax highlighting. Imported language names and aliases are preserved. Use
+  Markdown mode for a language outside the picker.
 - `/image` inserts a URL or uploads PNG, JPEG, GIF, WebP or AVIF
   (up to 10 MB). Uploads commit immediately; publishing the post is separate.
   Paste an image from the clipboard or drop image files into the rich editor;
