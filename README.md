@@ -55,10 +55,19 @@ Contents read/write for that repository. Remember on this device is opt-in.
   documents keep their paths when their titles change.
 - Equations use `$…$` inline or `$$…$$` on their own lines; click a rendered
   equation to edit its LaTeX. Images use standard `![alt](path)` Markdown.
-- The Image button inserts a URL or uploads PNG, JPEG, GIF, WebP or AVIF
+- Type `/` in a paragraph, filter and press Enter. **Insert /** opens the same
+  menu on touch devices: Link page, Link URL, Image, Code block, Math block,
+  Table block, Bullet list and Checklist. Page search uses titles and paths from
+  the existing catalog; draft pages are labeled. Links keep the full Markdown path.
+- Type `- [ ] ` or `- [x] ` (including the trailing space) to start a checklist.
+  Click a checkbox to toggle it; Enter continues the list, Enter on an empty item
+  exits it. Tables start with two columns; Tab moves between cells, Enter exits.
+- `/image` inserts a URL or uploads PNG, JPEG, GIF, WebP or AVIF
   (up to 10 MB). Uploads commit immediately; publishing the post is separate.
-  Uploaded images can be public even when the post is a draft.
-- Source preserves renderer-specific Markdown. Rich mode is CommonMark plus math, and
+  Paste an image from the clipboard or drop image files into the rich editor;
+  source mode inserts them at its selected cursor position. Multiple files upload
+  sequentially. Uploaded images can be public even when the post is a draft.
+- Source preserves renderer-specific Markdown. Rich mode is CommonMark plus GFM and math, and
   existing source defaults to Markdown if rich serialization would change it.
 
 Local drafts live in one browser/origin. Repository drafts are committed files.
@@ -74,7 +83,7 @@ index; it does not prove a frontmatter field. Errors keep writing local.
 | Host | Rendering Markdown, hiding drafts, deploying and styling articles. |
 
 One root per page, one writing tab and one document per action. No multi-author
-coordination, batch commits, image upload, exact build preview or pull-request
+coordination, batch post commits, exact build preview or pull-request
 workflow. Tests protect publishing, metadata and recovery; they simulate GitHub.
 
 ## Develop and maintain

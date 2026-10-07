@@ -1,3 +1,4 @@
+import { pageHref } from './commands.js';
 import { filename, readTitle, splitDocument, isDraft } from './document.js';
 import { github } from './github.js';
 import { draftStore } from './storage.js';
@@ -112,6 +113,7 @@ export async function mountDuckposting(root, options, dependencies = {}) {
           current.text = text; store.save(current); updatePublish();
         },
         onReady() {},
+        getPages: () => entries().filter(entry => entry.path !== current.path).map(entry => ({ ...entry, href: pageHref(entry.path, config.contentRoot) })),
         async imageSource(src) {
           const target = imageTarget(config, src, current.path, [...api.imagePaths, ...imageCache.keys()]);
           if (!target.path || !token.value.trim()) return target.url;

@@ -15,11 +15,11 @@ npm ci
 npm run package
 ```
 
-Copy `dist/duckposting-0.1.0-alpha.5.tgz` into your blog's `vendor/` directory,
+Copy `dist/duckposting-0.1.0-alpha.6.tgz` into your blog's `vendor/` directory,
 then run from the blog:
 
 ```sh
-npm install ./vendor/duckposting-0.1.0-alpha.5.tgz
+npm install ./vendor/duckposting-0.1.0-alpha.6.tgz
 ```
 
 Commit the archive, package.json and package-lock.json so your host's `npm ci`
@@ -104,12 +104,22 @@ include components and layouts; they are not necessarily CSS-only. A selector
 like `article > p` needs `article .ProseMirror > p` for the rich editor's wrapper.
 No copied theme, automatic CSS rewriting or exact renderer preview is promised.
 
-Rich editing uses CommonMark plus `$…$` inline math and `$$…$$` block math.
+Rich editing uses CommonMark, GFM tables/task lists and `$…$` inline math and
+`$$…$$` block math. Keep Quartz's GitHubFlavoredMarkdown transformer enabled for
+tables and checklists on published pages.
 Enable Quartz's `@quartz-community/latex` transformer with `renderEngine: katex`
 for equations on published pages; the editor renders them with KaTeX. This is
 math notation, not a full LaTeX document compiler. Escape `\$` for literal dollars.
 
-Use Image below the body to insert a URL or upload a raster image (10 MB max).
+Type `/` in a paragraph or use **Insert /** below the body. The menu includes
+page/URL links, images, code, equations, tables, bullets and checklists. Choose
+Link page to search the existing catalog by title or path. Draft pages are
+labeled; they become publicly reachable only when published. Links store full
+content-root-relative Markdown paths, resolved by Quartz's link transformer.
+
+Use Image to insert a URL or upload a raster image (10 MB max). Pasting images
+and dropping image files use the same upload path. In source mode, files insert
+at the current text selection.
 Files are committed immediately to `imageDir` with unique filenames. The post
 stores ordinary `![alt](images/file.png)` Markdown, never a temporary blob URL.
 The editor can preview repository images before the site rebuilds. Quartz's
@@ -119,7 +129,7 @@ posts; discarding or deleting a post does not remove its image files.
 If a roundtrip would change existing Markdown,
 Duckposting opens source mode; choosing Rich explicitly allows conversion when
 you edit. This can include harmless formatting differences. Use source for
-wikilinks, callouts, embeds, GFM extensions or builder-specific syntax.
+wikilinks, callouts, embeds or builder-specific syntax.
 
 ## Upgrade / remove
 

@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.0-alpha.6 — unpublished
+
+- A small slash menu for page/URL links, images, code, equations, tables,
+  bullets and checklists. The Insert button opens the same menu on phones.
+- Search pages from the existing content catalog, retaining complete Markdown
+  paths. Commands insert fragments at the cursor in rich and source modes.
+- Native GFM tables and task lists, including clickable checkboxes.
+- Paste/drop raster images through the existing upload path. Ordinary text
+  paste and internal editor dragging retain their native behavior.
+- Fast Enter uses the latest command range; block insertion keeps undo and
+  cursor placement. Cancelling a wizard preserves the original writing.
+
 ## 0.1.0-alpha.5 — unpublished
 
 - Fix reopening standard Markdown images without an optional title. Milkdown

@@ -184,3 +184,14 @@ test('closed editor image callbacks cannot commit files', async () => {
     assert.equal(f.calls.filter(call => call.method === 'PUT').length, 0);
   } finally { await f.destroy(); }
 });
+test('page picker reuses the scoped catalog and excludes the current page without fetching contents', async () => {
+  const storage = memory(); storage.setItem(prefix + 'token', 'fake');
+  const f = await fixture({ storage });
+  try {
+    await f.click('.duck-entry:nth-child(1) button');
+    const calls = f.calls.length;
+    const pages = f.sessions[0].callbacks.getPages();
+    assert.deepEqual(pages.map(page => [page.title, page.href]), [['B', 'posts/b.md']]);
+    assert.equal(f.calls.length, calls);
+  } finally { await f.destroy(); }
+});
