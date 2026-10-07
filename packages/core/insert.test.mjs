@@ -4,7 +4,7 @@ import { Schema } from '@milkdown/kit/prose/model';
 import { EditorState, TextSelection } from '@milkdown/kit/prose/state';
 import { history, undo } from '@milkdown/kit/prose/history';
 import { Ctx, Container, Clock } from '@milkdown/ctx';
-import { nodesCtx } from '@milkdown/kit/core';
+import { nodesCtx, schemaCtx } from '@milkdown/kit/core';
 import { docSchema, textSchema, paragraphSchema, codeBlockSchema, bulletListSchema, linkSchema } from '@milkdown/kit/preset/commonmark';
 import { extendListItemSchemaForTask, tableSchema, tableHeaderRowSchema, tableRowSchema, tableCellSchema, tableHeaderSchema } from '@milkdown/kit/preset/gfm';
 import { ParserState, SerializerState } from '@milkdown/kit/transformer';
@@ -12,6 +12,8 @@ import { remark } from 'remark';
 import remarkGfm from 'remark-gfm';
 import { insertFragment, sourceFragment } from './insert.js';
 import { commands, linkMarkdown } from './commands.js';
+import { appendTable } from './tables.js';
+import { TableMap } from '@milkdown/kit/prose/tables';
 
 const ctx = new Ctx(new Container(), new Clock());
 ctx.inject(nodesCtx, []);
@@ -21,6 +23,7 @@ for (const node of [paragraphSchema, codeBlockSchema, bulletListSchema, extendLi
 }
 linkSchema.ctx(ctx);
 const schema = new Schema({ nodes: Object.fromEntries(ctx.get(nodesCtx)), marks: { link: ctx.get(linkSchema.key)(ctx) } });
+ctx.inject(schemaCtx, schema);
 const markdown = remark().use(remarkGfm);
 const parse = ParserState.create(schema, markdown), serialize = SerializerState.create(schema, markdown);
 
@@ -60,4 +63,25 @@ test('source insertion keeps code cursor inside its fence and selects checklist 
   assert.equal(code.text.slice(0, code.from), '\n\n```\n');
   const task = sourceFragment('- [ ] Item', true, 'Item');
   assert.equal(task.text.slice(task.from, task.to), 'Item');
+});
+test('table controls append to their own table, retain alignment/content, focus new cells and undo once', () => {
+  const tableText = '| First | Second |\n| :--- | ---: |\n| A | B |';
+  const original = parse(`Before\n\n${tableText}\n\nBetween\n\n${tableText}\n\nAfter`);
+  let pos;
+  original.forEach((node, offset) => { if (node.type.name === 'table') pos = offset; });
+  for (const axis of ['row', 'column']) {
+    let state = EditorState.create({ schema, doc: original, plugins: [history()] });
+    state = state.apply(appendTable(state, ctx, pos, axis));
+    const table = state.doc.nodeAt(pos), map = TableMap.get(table);
+    assert.equal(map.height, axis === 'row' ? 3 : 2);
+    assert.equal(map.width, axis === 'column' ? 3 : 2);
+    assert(state.doc.child(1).eq(original.child(1)), 'The other table stays unchanged');
+    assert.equal(table.child(0).child(1).attrs.alignment, 'right');
+    if (axis === 'row') assert.equal(table.lastChild.child(1).attrs.alignment, 'right');
+    assert.equal(table.child(1).child(0).textContent, 'A');
+    assert.equal(state.selection.$from.parent.textContent, '');
+    assert.doesNotThrow(() => parse(serialize(state.doc)).check());
+    assert(undo(state, tr => state = state.apply(tr)));
+    assert(state.doc.eq(original));
+  }
 });

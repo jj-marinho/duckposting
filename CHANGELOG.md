@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.0-alpha.7 — unpublished
+
+- Click + Row or + Column beneath any rich-editor table to grow it at the bottom
+  or right. Focus moves into the new cell, ready to type.
+- Native table operations retain existing text, column alignment and undo.
+  Controls act on their own table and are disabled during publishing/uploads.
+
 ## 0.1.0-alpha.6 — unpublished
 
 - A small slash menu for page/URL links, images, code, equations, tables,

@@ -37,7 +37,8 @@ insertion, dialog cancellation, light/dark themes and a 390px viewport. Clipboar
 paste and simulated drops/uploads run in an isolated local fixture; no real files
 were uploaded and no test posts were published.
 
-Tables start at two columns with two body rows. Use source to change their size.
+Tables start at two columns with two body rows. Alpha.7 adds + Row and + Column
+buttons beneath each table; size changes preserve content, alignment and undo.
 Source-mode image drops insert at the text selection rather than pointer position.
 Draft page links work publicly after those pages are published. These helpers
 write Markdown, so the host still determines the final rendering.

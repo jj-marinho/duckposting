@@ -77,3 +77,7 @@
 .duckposting #body li > div > p { margin-block: .25em; }
 .duckposting #body table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; margin-block: 1rem; }
 .duckposting #body td, .duckposting #body th { min-width: 5rem; border: 1px solid var(--lightgray, #ddd); padding: .4rem .6rem; }
+.duckposting .duck-table { margin-block: 1rem; }
+.duckposting #body .duck-table table { margin-bottom: .35rem; }
+.duckposting .duck-table-tools { display: flex; gap: .4rem; font: 12px/1.5 system-ui, sans-serif; }
+.duckposting .duck-table-tools button { min-height: 32px; }

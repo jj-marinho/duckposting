@@ -61,7 +61,9 @@ Contents read/write for that repository. Remember on this device is opt-in.
   the existing catalog; draft pages are labeled. Links keep the full Markdown path.
 - Type `- [ ] ` or `- [x] ` (including the trailing space) to start a checklist.
   Click a checkbox to toggle it; Enter continues the list, Enter on an empty item
-  exits it. Tables start with two columns; Tab moves between cells, Enter exits.
+  exits it. Tables start with two columns. Use **+ Row** and **+ Column** under
+  each table to grow it; the cursor moves into the new cell. Tab moves between
+  cells, Enter exits.
 - `/image` inserts a URL or uploads PNG, JPEG, GIF, WebP or AVIF
   (up to 10 MB). Uploads commit immediately; publishing the post is separate.
   Paste an image from the clipboard or drop image files into the rich editor;

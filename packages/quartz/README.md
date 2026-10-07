@@ -15,11 +15,11 @@ npm ci
 npm run package
 ```
 
-Copy `dist/duckposting-0.1.0-alpha.6.tgz` into your blog's `vendor/` directory,
+Copy `dist/duckposting-0.1.0-alpha.7.tgz` into your blog's `vendor/` directory,
 then run from the blog:
 
 ```sh
-npm install ./vendor/duckposting-0.1.0-alpha.6.tgz
+npm install ./vendor/duckposting-0.1.0-alpha.7.tgz
 ```
 
 Commit the archive, package.json and package-lock.json so your host's `npm ci`
