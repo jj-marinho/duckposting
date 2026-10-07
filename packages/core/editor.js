@@ -365,7 +365,7 @@ export async function mountEditor(root, session, { onChange, onReady, imageSourc
   return { destroy, focus() { if (!source && !title.textContent.trim()) title.focus(); else focus(); }, setBusy(value) {
     busy = value;
     if (busy) menu.close();
-    for (const control of body.querySelectorAll('input[type=checkbox], .duck-table-tools button, .duck-code-language select')) control.disabled = busy;
+    for (const control of body.querySelectorAll('input[type=checkbox], .duck-table-tools button, .duck-code-language select')) control.disabled = busy || control.dataset.minimum === 'true';
     title.contentEditable = busy || !fieldsValid ? "false" : "plaintext-only";
     post.disabled = metadata.disabled = busy;
     get("draft-status").disabled = get("post-date").disabled = busy || !fieldsValid;

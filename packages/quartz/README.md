@@ -15,11 +15,11 @@ npm ci
 npm run package
 ```
 
-Copy `dist/duckposting-0.1.0-alpha.9.tgz` into your blog's `vendor/` directory,
+Copy `dist/duckposting-0.1.0-alpha.10.tgz` into your blog's `vendor/` directory,
 then run from the blog:
 
 ```sh
-npm install ./vendor/duckposting-0.1.0-alpha.9.tgz
+npm install ./vendor/duckposting-0.1.0-alpha.10.tgz
 ```
 
 Commit the archive, package.json and package-lock.json so your host's `npm ci`
@@ -116,6 +116,10 @@ page/URL links, images, code, equations and tables. Choose
 Link page to search the existing catalog by title or path. Draft pages are
 labeled; they become publicly reachable only when published. Links store full
 content-root-relative Markdown paths, resolved by Quartz's link transformer.
+
+Table controls sit beside and below each table: + Column / − Column on the
+right, + Row / − Row underneath. Removal trims the last column or row and can
+be undone; the header, one body row and one column remain.
 
 Code blocks have a language picker and save ordinary fenced Markdown. Keep
 Quartz's SyntaxHighlighting transformer enabled for highlighting published code;

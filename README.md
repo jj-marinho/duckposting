@@ -61,9 +61,10 @@ Contents read/write for that repository. Remember on this device is opt-in.
   the existing catalog; draft pages are labeled. Links keep the full Markdown path.
 - Type `- [ ] ` or `- [x] ` (including the trailing space) to start a checklist.
   Click a checkbox to toggle it; Enter continues the list, Enter on an empty item
-  exits it. Tables start with two columns. Use **+ Row** and **+ Column** under
-  each table to grow it; the cursor moves into the new cell. Tab moves between
-  cells, Enter exits.
+  exits it. Tables start with two columns. **+ Column / − Column** sit on the
+  right; **+ Row / − Row** sit underneath. Removal trims the last column or row
+  and supports undo, retaining the header, one body row and one column. Adding
+  moves the cursor into the new cell. Tab moves between cells, Enter exits.
 - Each code block has a language picker. Its selection becomes the Markdown
   fence language (for example, `python`); your site renderer supplies published
   syntax highlighting. Imported language names and aliases are preserved. Use

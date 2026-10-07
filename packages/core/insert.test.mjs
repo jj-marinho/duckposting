@@ -12,7 +12,7 @@ import { remark } from 'remark';
 import remarkGfm from 'remark-gfm';
 import { insertFragment, sourceFragment } from './insert.js';
 import { commands, linkMarkdown } from './commands.js';
-import { appendTable } from './tables.js';
+import { resizeTable } from './tables.js';
 import { TableMap } from '@milkdown/kit/prose/tables';
 import { codeLanguage } from './code.js';
 
@@ -72,7 +72,7 @@ test('table controls append to their own table, retain alignment/content, focus 
   original.forEach((node, offset) => { if (node.type.name === 'table') pos = offset; });
   for (const axis of ['row', 'column']) {
     let state = EditorState.create({ schema, doc: original, plugins: [history()] });
-    state = state.apply(appendTable(state, ctx, pos, axis));
+    state = state.apply(resizeTable(state, ctx, pos, axis));
     const table = state.doc.nodeAt(pos), map = TableMap.get(table);
     assert.equal(map.height, axis === 'row' ? 3 : 2);
     assert.equal(map.width, axis === 'column' ? 3 : 2);
@@ -85,6 +85,40 @@ test('table controls append to their own table, retain alignment/content, focus 
     assert(undo(state, tr => state = state.apply(tr)));
     assert(state.doc.eq(original));
   }
+});
+test('table removal trims only its last row or column, retains headers/alignment and undoes once', () => {
+  const tableText = '| First | Second | Third |\n| :--- | :---: | ---: |\n| A | B | C |\n| D | E | F |';
+  const original = parse(`Before\n\n${tableText}\n\nBetween\n\n${tableText}\n\nAfter`);
+  let pos;
+  original.forEach((node, offset) => { if (node.type.name === 'table') pos = offset; });
+  for (const axis of ['row', 'column']) {
+    let state = EditorState.create({ schema, doc: original, plugins: [history()] });
+    state = state.apply(resizeTable(state, ctx, pos, axis, true));
+    const table = state.doc.nodeAt(pos), map = TableMap.get(table);
+    assert.equal(map.height, axis === 'row' ? 2 : 3);
+    assert.equal(map.width, axis === 'column' ? 2 : 3);
+    assert(state.doc.child(1).eq(original.child(1)), 'The other table stays unchanged');
+    assert(state.doc.lastChild.eq(original.lastChild));
+    assert.equal(table.firstChild.firstChild.textContent, 'First');
+    assert.equal(table.firstChild.child(1).attrs.alignment, 'center');
+    assert.equal(table.lastChild.child(1).textContent, axis === 'row' ? 'B' : 'E');
+    assert.equal(state.selection.$from.parent.textContent, axis === 'row' ? 'A' : 'Second');
+    assert(parse(serialize(state.doc)).eq(state.doc));
+    assert(undo(state, tr => state = state.apply(tr)));
+    assert(state.doc.eq(original));
+  }
+});
+test('table controls retain one column, the header and one body row, and can grow again', () => {
+  let state = EditorState.create({ schema, doc: parse('| Header |\n| --- |\n| Value |\n| Last |') });
+  assert.equal(resizeTable(state, ctx, 0, 'column', true), null);
+  state = state.apply(resizeTable(state, ctx, 0, 'row', true));
+  assert.equal(state.doc.firstChild.childCount, 2);
+  assert.equal(resizeTable(state, ctx, 0, 'row', true), null);
+  assert(parse(serialize(state.doc)).eq(state.doc));
+  state = state.apply(resizeTable(state, ctx, 0, 'row'));
+  assert.equal(state.doc.firstChild.childCount, 3);
+  assert.equal(state.doc.firstChild.firstChild.firstChild.textContent, 'Header');
+  assert(parse(serialize(state.doc)).eq(state.doc));
 });
 test('code language changes retain exact code, cursor and other blocks, serialize and undo once', () => {
   const original = parse('```haskell\nmain = putStrLn "Olá 🦆"\n```\n\n```python\nprint(1)\n```');

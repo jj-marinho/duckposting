@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.0-alpha.10 — unpublished
+
+- Place + Column / − Column beside each table and + Row / − Row underneath.
+- Remove the last column or body row with native table operations and one-step
+  undo. Retain the header, one body row and one column; disable removal at these
+  limits, including after publishing/uploads finish.
+
 ## 0.1.0-alpha.9 — unpublished
 
 - Choose a language above each code block. The selection saves as the normal

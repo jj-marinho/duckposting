@@ -77,10 +77,12 @@
 .duckposting #body li > div > p { margin-block: .25em; }
 .duckposting #body table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; margin-block: 1rem; }
 .duckposting #body td, .duckposting #body th { min-width: 5rem; border: 1px solid var(--lightgray, #ddd); padding: .4rem .6rem; }
-.duckposting .duck-table { margin-block: 1rem; }
-.duckposting #body .duck-table table { margin-bottom: .35rem; }
+.duckposting .duck-table { display: grid; grid-template-columns: minmax(0, 1fr) auto; width: fit-content; max-width: 100%; gap: .4rem; margin-block: 1rem; }
+.duckposting #body .duck-table table { margin: 0; }
 .duckposting .duck-table-tools { display: flex; gap: .4rem; font: 12px/1.5 system-ui, sans-serif; }
 .duckposting .duck-table-tools button { min-height: 32px; }
+.duckposting .duck-table-columns { grid-column: 2; grid-row: 1; flex-direction: column; align-self: center; }
+.duckposting .duck-table-rows { grid-column: 1; grid-row: 2; }
 .duckposting .duck-code { margin-block: 1rem; }
 .duckposting .duck-code-language { display: flex; align-items: center; gap: .5rem; font: 12px/1.5 system-ui, sans-serif; }
 .duckposting .duck-code-language select { font: inherit; color: inherit; background: var(--light, #fff); border: 1px solid var(--lightgray, #ddd); border-radius: .25rem; min-height: 32px; padding: .2rem .4rem; }

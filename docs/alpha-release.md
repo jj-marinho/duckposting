@@ -1,5 +1,5 @@
 > Historical record for alpha.1. Current development uses one unpublished npm
-> package, `duckposting` (alpha.9). See the [installation guide](../packages/quartz/README.md).
+> package, `duckposting` (alpha.10). See the [installation guide](../packages/quartz/README.md).
 
 # Public alpha: 0.1.0-alpha.1
 
