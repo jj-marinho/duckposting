@@ -1,0 +1,19 @@
+{
+  "name": "duckposting-astro",
+  "private": true,
+  "version": "0.1.0-alpha.1",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": "./index.js",
+    "./component": "./Duckposting.astro"
+  },
+  "peerDependencies": {
+    "astro": "^5.0.0 || ^6.0.0 || ^7.0.0"
+  },
+  "peerDependenciesMeta": {
+    "astro": {
+      "optional": true
+    }
+  }
+}

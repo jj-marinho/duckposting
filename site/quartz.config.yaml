@@ -1,0 +1,78 @@
+configuration:
+  pageTitle: duckposting
+  pageTitleSuffix: ""
+  enableSPA: true
+  enablePopovers: false
+  analytics: null
+  locale: en-US
+  baseUrl: jj-marinho.github.io/duckposting
+  ignorePatterns: [private, templates, .DS_Store]
+  theme:
+    fontOrigin: googleFonts
+    cdnCaching: false
+    typography: { header: Inter, body: Lora, code: IBM Plex Mono }
+    colors:
+      lightMode:
+        light: "#fcfbf8"
+        lightgray: "#e5e1d8"
+        gray: "#827c70"
+        darkgray: "#514d44"
+        dark: "#24251f"
+        secondary: "#36724c"
+        tertiary: "#255639"
+        highlight: "rgba(54,114,76,.08)"
+        textHighlight: "#f0e2a6"
+      darkMode:
+        light: "#191b17"
+        lightgray: "#33372e"
+        gray: "#8b9182"
+        darkgray: "#d0d4c7"
+        dark: "#f2f3eb"
+        secondary: "#97c7a5"
+        tertiary: "#c0e2c8"
+        highlight: "rgba(151,199,165,.1)"
+        textHighlight: "#6a5d23"
+plugins:
+  - source: "@quartz-community/note-properties"
+    enabled: true
+    options: { hidePropertiesView: true, includeAll: false, includedProperties: [], delimiters: "---", language: yaml }
+    order: 5
+  - source: "@quartz-community/syntax-highlighting"
+    enabled: true
+    options: { theme: { light: github-light, dark: github-dark }, keepBackground: false }
+    order: 20
+  - source: "@quartz-community/github-flavored-markdown"
+    enabled: true
+    order: 30
+  - source: "@quartz-community/crawl-links"
+    enabled: true
+    options: { markdownLinkResolution: shortest }
+    order: 40
+  - source: "@quartz-community/description"
+    enabled: true
+    order: 50
+  - source: "@quartz-community/latex"
+    enabled: true
+    options: { renderEngine: katex }
+    order: 60
+  - source: "@quartz-community/remove-draft"
+    enabled: true
+  - source: "@quartz-community/content-page"
+    enabled: true
+  - source: "@quartz-community/article-title"
+    enabled: true
+    layout: { position: beforeBody, priority: 10 }
+  - source: "@quartz-community/folder-page"
+    enabled: true
+    options: { showFolderCount: false }
+  - source: "@quartz-community/content-index"
+    enabled: true
+    options: { enableSiteMap: true, enableRSS: false }
+  - source: "@quartz-community/favicon"
+    enabled: true
+layout:
+  byPageType:
+    content: { template: docs, positions: { afterBody: [], left: [], right: [] } }
+    folder: { template: docs, positions: { afterBody: [], left: [], right: [] } }
+    "404": { template: docs, positions: { beforeBody: [], afterBody: [], left: [], right: [] } }
+    duckposting: { template: docs, positions: { beforeBody: [], afterBody: [], left: [], right: [] } }

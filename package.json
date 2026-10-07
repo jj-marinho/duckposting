@@ -1,6 +1,6 @@
 {
   "name": "duckposting",
-  "version": "0.1.0-alpha.10",
+  "version": "0.1.0-alpha.11",
   "private": true,
   "type": "module",
   "workspaces": [
@@ -10,14 +10,17 @@
     "build": "node build.mjs",
     "test": "node --test test.mjs packages/*/*.test.mjs",
     "package": "npm pack --pack-destination dist",
-    "prepack": "npm run build"
+    "prepack": "npm run build",
+    "build:site": "node site/build.mjs",
+    "serve:site": "node site/serve.mjs"
   },
   "devDependencies": {
+    "@quartz-community/utils": "1.0.1",
     "esbuild": "0.28.2",
     "github-slugger": "2.0.0",
     "linkedom": "0.18.13"
   },
-  "description": "A static, GitHub-backed Markdown editor for Quartz blogs",
+  "description": "A static, GitHub-backed Markdown editor for your blog",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -30,6 +33,15 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./astro": {
+      "types": "./dist/astro/index.d.ts",
+      "default": "./dist/astro/index.js"
+    },
+    "./astro/component": "./dist/astro/Duckposting.astro",
+    "./jekyll": {
+      "types": "./dist/jekyll.d.ts",
+      "default": "./dist/jekyll.js"
     }
   },
   "files": [
@@ -42,11 +54,41 @@
     "CHANGELOG.md",
     "SECURITY.md",
     "SUPPORT.md",
-    "dist/fonts"
+    "dist/fonts",
+    "dist/astro",
+    "dist/jekyll.js",
+    "dist/jekyll.d.ts",
+    "site/content/docs"
   ],
   "peerDependencies": {
     "@quartz-community/types": "^1.0.0",
     "@quartz-community/utils": "^1.0.1",
+    "astro": "^5.0.0 || ^6.0.0 || ^7.0.0",
     "preact": "^10.0.0"
+  },
+  "homepage": "https://jj-marinho.github.io/duckposting/",
+  "keywords": [
+    "markdown",
+    "blog",
+    "static-site",
+    "editor",
+    "milkdown",
+    "quartz",
+    "astro",
+    "jekyll"
+  ],
+  "peerDependenciesMeta": {
+    "@quartz-community/types": {
+      "optional": true
+    },
+    "@quartz-community/utils": {
+      "optional": true
+    },
+    "preact": {
+      "optional": true
+    },
+    "astro": {
+      "optional": true
+    }
   }
 }

@@ -26,3 +26,24 @@ test('offline exact-document drafts remain visible even when the deployed index 
   const entries = contentEntries(config, [], null, store);
   assert.equal(entries.length, 1); assert.equal(entries[0].path, path); assert.equal(entries[0].title, 'Offline changes');
 });
+
+test('builder manifests retain explicit safe public routes and reject executable URLs', () => {
+  const result = publishedIndex([{ path: 'notes/one.md', title: 'One', url: '/project/custom-route/' }], config);
+  assert.equal(result[0].url, '/project/custom-route/');
+  for (const url of ['javascript:alert(1)', '//other.example/path', '/a\\b', '/a\nb']) assert.throws(() => publishedIndex([{ path: 'notes/one.md', title: 'One', url }], config));
+});
+test('external upload directories need an explicit safe public mapping', () => {
+  const settings = configuration({ repository: 'test/blog', contentRoot: 'src/content/blog', imageDir: 'public/images', imageBase: '/project/images/' });
+  assert.equal(settings.imageDir, 'public/images');
+  for (const imageBase of ['https://example.org/', '//example.org/', '/a/../b/', '/a/%2e%2e/', '/images', '/a?x/']) assert.throws(() => configuration({ repository: 'test/blog', imageDir: 'public/images', imageBase }));
+  assert.throws(() => configuration({ repository: 'test/blog', filenameFormat: 'anything' }));
+  assert.throws(() => configuration({ repository: 'test/blog', draftValue: 'false' }));
+});
+
+test('local publication status keeps current builder URLs and refreshes them after rebuild', () => {
+  const path = 'notes/one.md';
+  const store = { known: { [path]: { path, title: 'Edited', draft: false, url: '/stale/' } }, drafts: {} };
+  const entries = contentEntries(config, [{ path, title: 'One', url: '/rebuilt/' }], null, store);
+  assert.equal(entries[0].url, '/rebuilt/');
+  assert.equal(entries[0].title, 'Edited');
+});

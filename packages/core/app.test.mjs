@@ -9,7 +9,7 @@ const text = title => `---\ntitle: "${title}"\ndraft: false\n---\n\nBody`;
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status });
 const settle = async () => { for (let i = 0; i < 6; i++) await new Promise(resolve => setImmediate(resolve)); };
 function memory() { const map = new Map(); return { getItem: key => map.get(key) ?? null, setItem: (key, value) => map.set(key, value), removeItem: key => map.delete(key) }; }
-async function fixture({ storage = memory(), createEditor, deniedRead = false, deniedWrite = false } = {}) {
+async function fixture({ storage = memory(), createEditor, deniedRead = false, deniedWrite = false, options = {} } = {}) {
   const { window, document } = parseHTML('<html><body><main id="app"></main></body></html>');
   globalThis.document = document;
   // linkedom has no browser focus manager; record focus transitions explicitly.
@@ -39,7 +39,7 @@ async function fixture({ storage = memory(), createEditor, deniedRead = false, d
     return { async destroy() {}, setBusy() {}, focus() { node.focus(); } };
   };
   // Native <dialog> is exercised in browser; this DOM fixture keeps the same open/close contract.
-  const mounted = mountDuckposting(root, config, { storage, request, createEditor: createEditor || fakeEditor });
+  const mounted = mountDuckposting(root, { ...config, ...options }, { storage, request, createEditor: createEditor || fakeEditor });
   for (const dialog of root.querySelectorAll('dialog')) { dialog.showModal = () => dialog.open = true; dialog.close = () => dialog.open = false; }
   const destroy = await mounted; await settle();
   const click = async selector => { const node = root.querySelector(selector); node.focus(); node.dispatchEvent(new window.Event('click')); await settle(); };
@@ -193,5 +193,45 @@ test('page picker reuses the scoped catalog and excludes the current page withou
     const pages = f.sessions[0].callbacks.getPages();
     assert.deepEqual(pages.map(page => [page.title, page.href]), [['B', 'posts/b.md']]);
     assert.equal(f.calls.length, calls);
+  } finally { await f.destroy(); }
+});
+
+test('builder URLs survive edits, new links wait for rebuilt routes and native draft flags reach Publish', async () => {
+  const storage = memory(); storage.setItem(prefix + 'token', 'fake');
+  const f = await fixture({ storage, options: { published: [{ path: 'notes/posts/a.md', title: 'A', url: '/project/custom/a/' }, { path: 'notes/posts/b.md', title: 'B', url: '/project/custom/b/' }], publishedLinksOnly: true, draftField: 'published', draftValue: false, filenameFormat: 'date-title' } });
+  try {
+    await f.click('.duck-entry:nth-child(1) button');
+    assert.equal(f.sessions[0].callbacks.getPages()[0].href, '/project/custom/b/');
+    assert.equal(f.sessions[0].callbacks.config.draftField, 'published');
+    f.sessions[0].callbacks.onChange('---\ntitle: Edited\npublished: false\n---\n\nBody');
+    await f.click('#publish');
+    assert.match(f.root.querySelector('#status').textContent, /Draft saved/);
+    await f.click('#new');
+    await f.click('#start-new');
+    const current = f.sessions.at(-1).callbacks;
+    current.onChange('---\ntitle: New entry\ndate: 2026-10-07\npublished: true\n---\n\nBody');
+    await f.click('#publish');
+    assert(f.files.has('notes/posts/2026-10-07-new-entry.md'));
+    await f.click('.duck-entry:nth-child(1) button');
+    const pages = f.sessions.at(-1).callbacks.getPages();
+    assert(!pages.some(page => page.title === 'New entry'), 'Do not guess a new host route before rebuild');
+    assert(!pages.some(page => page.title === 'Edited'), 'Native repository draft is not linkable');
+  } finally { await f.destroy(); }
+});
+
+test('separate upload roots save one image with public Markdown URLs, keeping local recovery', async () => {
+  const storage = memory(); storage.setItem(prefix + 'token', 'fake');
+  const f = await fixture({ storage, options: { imageDir: 'public/images', imageBase: '/project/images/' } });
+  try {
+    await f.click('.duck-entry:nth-child(1) button');
+    const callbacks = f.sessions[0].callbacks;
+    callbacks.onChange(text('Keep writing'));
+    const reference = await callbacks.uploadImage(new File(['fake raster bytes'], 'photo.png'));
+    assert.match(reference, /^\/project\/images\/photo-[\w-]+\.png$/);
+    const call = f.calls.find(call => call.method === 'PUT');
+    assert.match(call.url, /\/contents\/public\/images\/photo-/);
+    assert.equal(JSON.parse(call.body).sha, undefined);
+    assert.equal(f.calls.filter(call => call.method === 'PUT').length, 1);
+    assert.equal(draftStore(config, storage).drafts['notes/posts/a.md'].text, text('Keep writing'));
   } finally { await f.destroy(); }
 });

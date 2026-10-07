@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.0-alpha.11 — unpublished
+
+- Build the GitHub Pages project site with Quartz and its own duckposting `/write`;
+  keep the token-free sandbox under `/demo/` and editable guides under `site/content`.
+- Add static Astro integration/component and plugin-free Jekyll setup helper,
+  each with a real packed-install build fixture. Keep one root package.
+- Share explicit published URLs, boolean draft field configuration, dated
+  filenames and separate static image roots across adapters.
+- Make builder peers optional and document the npm release path without publishing.
+
 ## 0.1.0-alpha.10 — unpublished
 
 - Place + Column / − Column beside each table and + Row / − Row underneath.

@@ -1,0 +1,8 @@
+{
+  "name": "duckposting-jekyll",
+  "version": "0.1.0-alpha.1",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "exports": "./index.js"
+}

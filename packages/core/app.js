@@ -76,9 +76,9 @@ export async function mountDuckposting(root, options, dependencies = {}) {
     let valid = false;
     try {
       const title = readTitle(session?.text || '');
-      if (!session?.path) filename(session?.text || '');
+      if (!session?.path) filename(session?.text || '', config);
       valid = Boolean(title.trim()) && !/[\r\n]/.test(title) && Boolean(splitDocument(session.text).body.trim());
-      isDraft(session.text);
+      isDraft(session.text, config);
     } catch {}
     get('publish').disabled = busy || !ready || !valid || !token.value.trim() || config.repository === 'YOUR-USERNAME/YOUR-BLOG';
   }
@@ -108,12 +108,13 @@ export async function mountDuckposting(root, options, dependencies = {}) {
       await previous?.destroy();
       if (disposed || ticket !== viewTicket) return;
       const mounted = await createEditor(get('editor'), current, {
+        config,
         onChange(text) {
           if (disposed || ticket !== viewTicket) return;
           current.text = text; store.save(current); updatePublish();
         },
         onReady() {},
-        getPages: () => entries().filter(entry => entry.path !== current.path).map(entry => ({ ...entry, href: pageHref(entry.path, config.contentRoot) })),
+        getPages: () => entries().filter(entry => entry.path !== current.path && (!config.publishedLinksOnly || !entry.draft && entry.url)).map(entry => ({ ...entry, href: entry.url || pageHref(entry.path, config.contentRoot) })),
         async imageSource(src) {
           const target = imageTarget(config, src, current.path, [...api.imagePaths, ...imageCache.keys()]);
           if (!target.path || !token.value.trim()) return target.url;
@@ -134,7 +135,7 @@ export async function mountDuckposting(root, options, dependencies = {}) {
             if (disposed) throw new Error('Editor closed.');
             const url = URL.createObjectURL(file); imageURLs.add(url); imageCache.set(path, Promise.resolve(url));
             status('Image saved to GitHub. Publish the post when ready.');
-            return path.slice(config.contentRoot.length + 1);
+            return config.imageBase ? config.imageBase + path.slice(config.imageDir.length + 1).split('/').map(encodeURIComponent).join('/') : path.slice(config.contentRoot.length + 1);
           } catch (error) { status(`Image upload not confirmed. ${error.message} Your writing is kept.`); throw error; }
           finally { setBusy(false); }
         },
@@ -249,13 +250,13 @@ export async function mountDuckposting(root, options, dependencies = {}) {
   on(get('publish'), 'click', async () => {
     if (get('publish').disabled) return;
     const snapshot = { ...session };
-    const path = snapshot.path || `${config.contentDir.replace(/\/$/, '')}/${filename(snapshot.text)}`;
+    const path = snapshot.path || `${config.contentDir.replace(/\/$/, '')}/${filename(snapshot.text, config)}`;
     store.save(snapshot); setBusy(true); status('Publishing…');
     try {
       const result = await api.save(path, snapshot.text, snapshot.sha);
       if (disposed) return;
       store.forget(snapshot.id);
-      const entry = { path, title: titleOf(snapshot.text), draft: isDraft(snapshot.text), sha: result.sha };
+      const entry = { path, title: titleOf(snapshot.text), draft: isDraft(snapshot.text, config), sha: result.sha };
       store.mark(path, entry);
       if (files) files = [...files.filter(file => file.path !== path), entry];
       await back();
@@ -269,7 +270,8 @@ export async function mountDuckposting(root, options, dependencies = {}) {
   async function loadInitial() {
     setBusy(true);
     try {
-      if (config.index) {
+      if (config.published) published = publishedIndex(config.published, config);
+      else if (config.index) {
         const response = await request(config.index, { cache: 'no-store', signal: AbortSignal.any([signal, AbortSignal.timeout(30000)]) });
         if (!response.ok) throw new Error();
         published = publishedIndex(await response.json(), config);

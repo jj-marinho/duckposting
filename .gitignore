@@ -9,3 +9,7 @@ demo/THIRD_PARTY_LICENSES.txt
 
 write/fonts/
 demo/fonts/
+
+site/.quartz/
+site/.npm-cache/
+site/public/

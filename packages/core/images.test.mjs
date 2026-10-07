@@ -57,3 +57,14 @@ test('saved untitled Markdown images satisfy the actual Milkdown schema', async 
     assert.equal(saved.attrs.title, title ?? '');
   }
 });
+
+test('separate static image roots use host URL mappings without crossing repository scope', () => {
+  const settings = { ...config, contentRoot: '_posts', contentDir: '_posts', imageDir: 'assets/images', imageBase: '/project/assets/images/' };
+  const allowed = imageMatcher(settings);
+  assert(allowed('assets/images/photo a.png'));
+  assert(!allowed('assets/private/photo.png'));
+  const target = imageTarget(settings, '/project/assets/images/photo%20a.png?x=1', '_posts/post.md');
+  assert.deepEqual(target, { path: 'assets/images/photo a.png', url: '/project/assets/images/photo%20a.png?x=1' });
+  assert.throws(() => imageTarget(settings, '/project/assets/images/../private/a.png'));
+  assert.deepEqual(imageTarget(settings, '/existing-theme/image.png'), { url: '/existing-theme/image.png' });
+});

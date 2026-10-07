@@ -3,17 +3,17 @@ import { readTitle } from './document.js';
 
 export function publishedIndex(data, config) {
   const allowed = contentMatcher(config);
-  if (!Array.isArray(data) || data.some(entry => !entry || !allowed(entry.path) || typeof entry.title !== 'string')) {
+  if (!Array.isArray(data) || data.some(entry => !entry || !allowed(entry.path) || typeof entry.title !== 'string' || entry.url !== undefined && (typeof entry.url !== 'string' || !/^\/(?!\/)/.test(entry.url) || /[\\\u0000-\u0020\u007f]/.test(entry.url)))) {
     throw new Error('The published index must contain content paths and text titles.');
   }
-  return data.map(({ path, title }) => ({ path, title, draft: false }));
+  return data.map(({ path, title, url }) => ({ path, title, draft: false, ...(url === undefined ? {} : { url }) }));
 }
 
 export function contentEntries(config, published, files, store) {
   const allowed = contentMatcher(config), metadata = new Map(published.map(entry => [entry.path, entry]));
   for (const [path, entry] of Object.entries(store.known)) {
     if (!allowed(path)) continue;
-    if (entry) metadata.set(path, entry); else metadata.delete(path);
+    if (entry) metadata.set(path, { ...entry, ...(metadata.get(path)?.url ? { url: metadata.get(path).url } : {}) }); else metadata.delete(path);
   }
   const listed = new Map((files || [...metadata.values()]).filter(file => allowed(file.path) && store.known[file.path] !== null).map(file => [file.path, file]));
   // Cached exact-document changes remain recoverable even without credentials or an index.

@@ -19,7 +19,7 @@ import { imageURL, imageMarkdown, parseImage } from "./images.js";
 import katex from "katex";
 
 // Host provides the article-shaped root. All controls stay inside this instance.
-export async function mountEditor(root, session, { onChange, onReady, imageSource = async src => imageURL(src), uploadImage, getPages = () => [] }) {
+export async function mountEditor(root, session, { onChange, onReady, imageSource = async src => imageURL(src), uploadImage, getPages = () => [], config = {} }) {
   root.classList.add("duckposting");
   root.innerHTML = `
     <h1 class="article-title" id="title" contenteditable="plaintext-only" role="textbox" aria-label="Post title" data-placeholder="Your title"></h1>
@@ -74,7 +74,7 @@ export async function mountEditor(root, session, { onChange, onReady, imageSourc
   const validateFields = () => {
     try {
       title.textContent = readTitle(post.value);
-      get("draft-status").checked = isDraft(post.value);
+      get("draft-status").checked = isDraft(post.value, config);
       get("post-date").value = readDate(post.value);
       fieldsValid = true;
       fieldError = "";
@@ -127,7 +127,7 @@ export async function mountEditor(root, session, { onChange, onReady, imageSourc
     validateFields();
     persist();
   });
-  on(get("draft-status"), "change", () => { post.value = setDraft(post.value, get("draft-status").checked); renderFields(); persist(); });
+  on(get("draft-status"), "change", () => { post.value = setDraft(post.value, get("draft-status").checked, config); renderFields(); persist(); });
   on(post, "input", () => { bodyText = splitDocument(post.value).body; renderFields(); persist(); });
   on(get("source-toggle"), "click", () => {
     if (source) {

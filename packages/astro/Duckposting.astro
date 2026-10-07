@@ -1,0 +1,32 @@
+---
+import { browserSettings } from './index.js';
+import type { Options } from './index.js';
+interface Props extends Options {}
+const settings = browserSettings(Astro.props, import.meta.env.BASE_URL);
+const assets = `${import.meta.env.BASE_URL.replace(/\/?$/, '/')}duckposting/`;
+---
+<link rel="stylesheet" href={`${assets}editor.css`} />
+<div data-duckposting={JSON.stringify(settings)} data-module={`${assets}editor.js`}>
+  <p>Loading duckposting…</p>
+  <noscript>Enable JavaScript to write. Reading the blog does not require it.</noscript>
+</div>
+<script>
+  let root: HTMLElement | undefined, dispose: (() => Promise<void>) | undefined, generation = 0;
+  async function mount() {
+    const next = document.querySelector<HTMLElement>('[data-duckposting]');
+    if (next === root) return;
+    root = next ?? undefined;
+    const ticket = ++generation;
+    await dispose?.(); dispose = undefined;
+    if (!next) return;
+    try {
+      const { mountDuckposting } = await import(/* @vite-ignore */ next.dataset.module!);
+      if (ticket !== generation || !next.isConnected) return;
+      const cleanup = await mountDuckposting(next, JSON.parse(next.dataset.duckposting!));
+      if (ticket !== generation || !next.isConnected) await cleanup();
+      else dispose = cleanup;
+    } catch { if (ticket === generation) next.textContent = 'Could not load the editor. Reload to try again.'; }
+  }
+  document.addEventListener('astro:page-load', mount);
+  mount();
+</script>

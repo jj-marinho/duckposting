@@ -1,3 +1,6 @@
+> Historical Quartz-only audit. Current alpha adds tested Astro and Jekyll adapters;
+> see [current docs](../site/content/docs/index.md) and [npm release path](../site/content/docs/release.md).
+
 # duckposting: code audit and public-alpha plan
 
 Audit date: 3 October 2026. Scope: the core, Quartz adapter, browser assets,

@@ -5,14 +5,14 @@
 Milkdown for rich Markdown, GitHub for one-file commits, your existing site
 builder for publishing. No application server, OAuth backend or browser Git clone.
 
-**Alpha: Quartz 5 is the supported integration.** Other builders are future
-adapters, not advertised compatibility. One package and import: `duckposting`.
+**Alpha: Quartz 5, static Astro, and Jekyll posts.**
+One package: `duckposting`, with small builder adapters.
 The npm package is prepared locally and has not been published to the registry.
 
 ## Try it
 
-**[Try the sandbox](https://jj-marinho.github.io/duckposting/)** ·
-**[Install on Quartz](packages/quartz/README.md)**
+**[Project site and docs](https://jj-marinho.github.io/duckposting/)** ·
+**[Try the sandbox](https://jj-marinho.github.io/duckposting/demo/)**
 
 The token-free sandbox uses the same core with a fake repository. Create, edit,
 delete and recover writing without signing in; Publish changes only the browser.
@@ -27,7 +27,7 @@ For a local sandbox, open `http://localhost:8000/demo/`.
 
 ## Add it to a blog
 
-[Follow the Quartz installation guide](packages/quartz/README.md). During alpha
+[Quartz 5](site/content/docs/quartz.md) · [Astro](site/content/docs/astro.md) · [Jekyll](site/content/docs/jekyll.md). During alpha
 testing, install the locally packed npm archive; after registry publication the
 command will be `npm install duckposting`.
 
@@ -49,8 +49,8 @@ Contents read/write for that repository. Remember on this device is opt-in.
   stays under Post settings. Title and date stay synchronized with frontmatter.
 - Local recovery is scoped to the exact document. New Post offers both local
   unfinished posts and repository drafts. Recovery is a choice.
-- Publish changes one Markdown file. Draft checked means committed but hidden
-  by Quartz. Cloudflare or another host deploys after the GitHub commit.
+- Publish changes one Markdown file. Draft checked means committed with the adapter’s visibility setting;
+  the host must filter drafts. Cloudflare or another host deploys after the GitHub commit.
 - New filenames come from titles, including Unicode letters/numbers. Existing
   documents keep their paths when their titles change.
 - Equations use `$…$` inline or `$$…$$` on their own lines; click a rendered
@@ -86,7 +86,7 @@ index; it does not prove a frontmatter field. Errors keep writing local.
 | Part | Responsibility |
 | --- | --- |
 | `duckposting-core` | Content UI, document metadata, recovery and GitHub Contents/Tree API. |
-| `duckposting-quartz` | `/write`, host layout, browser assets and published index. |
+| Builder adapters | `/write`, host layout, browser assets and published routes. |
 | Host | Rendering Markdown, hiding drafts, deploying and styling articles. |
 
 One root per page, one writing tab and one document per action. No multi-author
@@ -107,7 +107,11 @@ npm run package
 `npm run package` builds and packs `dist/duckposting-<version>.tgz` using npm.
 CI uploads this candidate; it does not publish to npm. The package remains private
 until registry publication is explicitly requested. Browser dependencies are
-bundled; only Quartz types and Preact are peers. Licenses ship with the assets.
+bundled; builder peers are optional. Licenses ship with the assets.
+
+The project site uses Quartz and the same package at its own `/write`.
+Build it with `npm run build:site`; Markdown docs live in `site/content/docs/`.
+See [the site setup](site/README.md) and [npm release guide](site/content/docs/release.md).
 
 [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [Support](SUPPORT.md) ·
 [Security](SECURITY.md) · [Troubleshooting](docs/troubleshooting.md) ·

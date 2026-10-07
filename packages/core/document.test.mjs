@@ -119,3 +119,16 @@ test("date edits synchronize only that field, preserving timestamp until explici
   assert.equal(readDate('Body'), '');
   assert.equal(readDate(setDate('Body', '2026-10-04')), '2026-10-04');
 });
+
+test('builder settings use dated filenames and native boolean publication metadata', () => {
+  const config = { filenameFormat: 'date-title', draftField: 'published', draftValue: false };
+  const text = '---\ntitle: "João’s post"\ndate: 2026-10-07\npublished: true\nlayout: post\n---\n\nBody';
+  assert.equal(filename(text, config), '2026-10-07-joaos-post.md');
+  assert.equal(isDraft(text, config), false);
+  const hidden = setDraft(text, true, config);
+  assert.equal(isDraft(hidden, config), true);
+  assert.match(hidden, /published: false/);
+  assert.match(hidden, /layout: post/);
+  assert.equal(isDraft(setDraft(hidden, false, config), config), false);
+  for (const date of ['', '2026-02-30', '2026-13-01']) assert.throws(() => filename(text.replace('2026-10-07', date), config), /valid frontmatter date/);
+});

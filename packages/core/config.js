@@ -1,7 +1,7 @@
 import picomatch from 'picomatch';
 
 export function configuration(options = {}) {
-  const config = { branch: 'main', contentRoot: 'content', exclude: [],
+  const config = { branch: 'main', contentRoot: 'content', exclude: [], draftField: 'draft', draftValue: true, filenameFormat: 'title',
     template: '---\ntitle: ""\ndate: {{date}}\ndraft: false\n---\n\n', ...options };
   config.imageDir ??= `${config.contentRoot}/images`;
   config.contentDir ??= `${config.contentRoot}/posts`;
@@ -11,7 +11,10 @@ export function configuration(options = {}) {
     if (!safePath(path)) throw new Error('Content paths must be repository-relative directories without . or .. segments.');
   }
   if (config.contentDir !== config.contentRoot && !config.contentDir.startsWith(config.contentRoot + '/')) throw new Error('The new-post directory must be inside contentRoot.');
-  if (config.imageDir !== config.contentRoot && !config.imageDir.startsWith(config.contentRoot + '/')) throw new Error('The image directory must be inside contentRoot.');
+  if (config.imageBase !== undefined && (typeof config.imageBase !== 'string' || !/^\/(?!\/)(?:[^?#\\\s]*\/)?$/.test(config.imageBase) || config.imageBase.split('/').some(part => ['.', '..'].includes(decodeURIComponent(part))))) throw new Error('imageBase must be a root-relative URL ending in /.');
+  if (!config.imageBase && config.imageDir !== config.contentRoot && !config.imageDir.startsWith(config.contentRoot + '/')) throw new Error('An image directory outside contentRoot needs imageBase.');
+  if (typeof config.draftField !== 'string' || !/^[A-Za-z_][\w-]*$/.test(config.draftField) || typeof config.draftValue !== 'boolean') throw new Error('Configure a frontmatter draftField and a boolean draftValue.');
+  if (!['title', 'date-title'].includes(config.filenameFormat)) throw new Error('filenameFormat must be title or date-title.');
   if (typeof config.template !== 'string') throw new Error('The post template must be Markdown text.');
   if (!Array.isArray(config.exclude) || config.exclude.some(pattern => typeof pattern !== 'string' || !pattern)) throw new Error('exclude must be an array of folder names or glob patterns.');
   return config;

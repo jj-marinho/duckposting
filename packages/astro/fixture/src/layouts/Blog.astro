@@ -1,0 +1,10 @@
+---
+const { title = 'Astro smoke blog' } = Astro.props;
+---
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width" /><title>{title}</title></head><body><main><slot /></main></body></html>
+<style is:global>
+  body { background:#faf9f6; color:#292b2e; font:18px/1.7 Georgia,serif; }
+  main { max-width:700px; margin:4rem auto; padding:0 1rem; }
+  h1,h2,button { font-family:system-ui,sans-serif; }
+  img { max-width:100%; }
+</style>

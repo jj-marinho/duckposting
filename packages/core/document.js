@@ -26,12 +26,18 @@ export function readTitle(text) {
   return value;
 }
 
-export function filename(text) {
+export function filename(text, config = {}) {
   const title = readTitle(text);
   if (/\r|\n/.test(title)) throw new Error('Use a single-line frontmatter title, such as title: "Your title".');
   const slug = title.normalize('NFKD').toLowerCase().replace(/\p{M}/gu, '')
     .replace(/['’]/g, '').replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/g, '');
   if (!slug) throw new Error('Add a frontmatter title: "Your title" containing letters or numbers.');
+  if (config.filenameFormat === 'date-title') {
+    const date = readDate(text);
+    const parsed = new Date(date + 'T00:00:00Z');
+    if (!date || !Number.isFinite(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== date) throw new Error('Add a valid frontmatter date in YYYY-MM-DD format.');
+    return `${date}-${slug}.md`;
+  }
   return slug + '.md';
 }
 
@@ -70,13 +76,15 @@ export function setDate(text, date) {
   return setField(text, 'date', date);
 }
 
-export function isDraft(text) {
-  const value = frontmatter(text).data.draft;
-  return value === true || value === 'true';
+export function isDraft(text, config = {}) {
+  const value = frontmatter(text).data[config.draftField ?? 'draft'];
+  const draft = config.draftValue ?? true;
+  return value === draft || value === String(draft);
 }
 
-export function setDraft(text, draft) {
-  return setField(text, 'draft', Boolean(draft));
+export function setDraft(text, draft, config = {}) {
+  const value = config.draftValue ?? true;
+  return setField(text, config.draftField ?? 'draft', draft ? value : !value);
 }
 
 export function joinDocument(frontmatter, body) {

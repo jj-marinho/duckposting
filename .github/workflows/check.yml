@@ -25,3 +25,50 @@ jobs:
           path: dist/duckposting-*.tgz
           if-no-files-found: error
           retention-days: 14
+  astro:
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        version: ['5.18.2', '6.4.8', '7.3.7']
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - run: npm ci
+      - uses: actions/download-artifact@v7
+        with:
+          name: duckposting-release-candidate
+          path: candidate
+      - run: node scripts/astro-smoke.mjs candidate/duckposting-*.tgz
+        env:
+          ASTRO_VERSION: ${{ matrix.version }}
+  jekyll:
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        version: ['3.10.0', '4.4.1']
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+      - run: gem install jekyll --version "$JEKYLL_VERSION" --no-document
+        env:
+          JEKYLL_VERSION: ${{ matrix.version }}
+      - uses: actions/download-artifact@v7
+        with:
+          name: duckposting-release-candidate
+          path: candidate
+      - run: node scripts/jekyll-smoke.mjs candidate/duckposting-*.tgz
