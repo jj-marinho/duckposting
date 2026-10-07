@@ -6,7 +6,7 @@ const config = configuration({ repository: 'test/blog', contentRoot: 'notes', ex
 test('configuration scopes new posts and rejects unsafe paths before any request', () => {
   assert.equal(config.contentDir, 'notes/posts');
   assert.equal(configuration({ repository: 'test/blog', contentRoot: 'notes', contentDir: 'notes' }).contentDir, 'notes');
-  for (const options of [{ repository: undefined }, { repository: 'test/..' }, { contentDir: '.github/workflows' }, { contentRoot: '../notes' }, { contentRoot: 'C:\\notes' }, { exclude: 'private' }, { branch: '' }, { template: null }]) {
+  for (const options of [{ repository: undefined }, { repository: 'test/..' }, { contentDir: '.github/workflows' }, { contentRoot: '../notes' }, { contentRoot: 'C:\\notes' }, { exclude: 'private' }, { branch: '' }, { template: null }, { initialPath: '../README.md' }, { initialPath: 'content/images/x.png' }]) {
     assert.throws(() => configuration({ repository: 'test/blog', ...options }));
   }
 });

@@ -282,6 +282,10 @@ export async function mountDuckposting(root, options, dependencies = {}) {
     if (disposed) return;
     renderIndex();
     if (token.value.trim()) await refresh();
+    if (!disposed && config.initialPath) {
+      const entry = entries().find(entry => entry.path === config.initialPath);
+      if (entry) await edit(entry);
+    }
   }
   void loadInitial().catch(error => status(error.message));
   return async () => { disposed = true; ++viewTicket; controller.abort(); get('draft-picker').close(); get('confirm-dialog').close(); await editor?.destroy(); for (const url of imageURLs) URL.revokeObjectURL(url); };

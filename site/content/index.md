@@ -7,7 +7,7 @@ description: A small Markdown editor for the blog you already own. Static hostin
 
 A small editor for the blog you already own. Open `/write`, write something, and publish it to GitHub. Your existing site builder does the rest.
 
-**[Try the editor](https://jj-marinho.github.io/duckposting/demo/)** · **[Get started](docs/index.md)**
+**[Try the editor](https://jj-marinho.github.io/duckposting/)** · **[Get started](docs/index.md)**
 
 ## Writing comes first
 
@@ -33,7 +33,7 @@ Local drafts keep unfinished writing on your device. Committed drafts follow you
 
 ## Built with itself
 
-This site is Markdown, rendered by Quartz, with duckposting at its own [`/write`](https://jj-marinho.github.io/duckposting/write/). The [sandbox](https://jj-marinho.github.io/duckposting/demo/) uses the same editor and a pretend repository, so you can try publishing safely.
+The [homepage](https://jj-marinho.github.io/duckposting/) is the editor itself, with a pretend repository so you can try writing safely. `/write/` opens the same sandbox. Quartz renders the Markdown docs.
 
 One open source project. One npm package being prepared for release. No paid tiers, no content lock-in.
 

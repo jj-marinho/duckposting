@@ -1,7 +1,7 @@
 configuration:
   pageTitle: duckposting
   pageTitleSuffix: ""
-  enableSPA: true
+  enableSPA: false
   enablePopovers: false
   analytics: null
   locale: en-US

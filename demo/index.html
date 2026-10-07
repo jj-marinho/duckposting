@@ -5,15 +5,18 @@
 <title>Try duckposting</title>
 <link rel="stylesheet" href="./editor.css">
 <style>
-  :root { color-scheme: light dark; --light: light-dark(#fff, #171717); --lightgray: light-dark(#ddd, #444); }
-  body { max-width: 48rem; margin: 2rem auto; padding: 0 1rem; font: 18px/1.6 Georgia, serif; }
+  :root { color-scheme: light dark; --light: #fcfbf8; --dark: #24251f; --lightgray: #e5e1d8; --secondary: #36724c; }
+  @media (prefers-color-scheme: dark) { :root { --light: #191b17; --dark: #f2f3eb; --lightgray: #33372e; --secondary: #97c7a5; } }
+  body { background: var(--light); color: var(--dark); max-width: 48rem; margin: 2rem auto; padding: 0 1rem; font: 18px/1.6 Georgia, serif; }
+  a { color: var(--secondary); }
+  header button { color: inherit; background: transparent; border: 0; padding: 0; font: inherit; text-decoration: underline; cursor: pointer; }
   header { border-bottom: 1px solid var(--lightgray); padding-bottom: 1rem; margin-bottom: 2rem; font: 14px/1.5 system-ui; }
   h1, h2, h3 { line-height: 1.2; }
   .duckposting #connection { display: none; }
 </style>
 <header id="sandbox"><strong>duckposting sandbox</strong>
   <p>Create, edit and publish without signing in. Everything stays in this browser; no GitHub requests or token needed. GitHub confirmation messages are simulated.</p>
-  <a href="https://github.com/jj-marinho/duckposting">Source and installation</a> · <button id="reset">Reset sandbox</button>
+  <a href="https://github.com/jj-marinho/duckposting">GitHub</a> · <a href="/duckposting/docs/">Docs</a> · <button id="reset">Reset sandbox</button>
 </header>
 <main id="writer">Loading sandbox…</main>
 <script type="module">
@@ -29,7 +32,7 @@
   storage.setItem(namespace + 'token', 'sandbox-only');
   const repository = demoRepository(storage);
   await mountDuckposting(document.querySelector('#writer'), {
-    repository: 'demo/local', contentRoot: 'notes', contentDir: 'notes/posts', index: '/demo-content.json',
+    repository: 'demo/local', contentRoot: 'notes', contentDir: 'notes/posts', index: '/demo-content.json', initialPath: 'notes/about.md',
   }, { request: repository.request, storage });
   document.querySelector('#reset').addEventListener('click', () => {
     if (!confirm('Reset the sandbox and discard its demo drafts?')) return;

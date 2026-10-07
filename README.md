@@ -11,8 +11,8 @@ The npm package is prepared locally and has not been published to the registry.
 
 ## Try it
 
-**[Project site and docs](https://jj-marinho.github.io/duckposting/)** ·
-**[Try the sandbox](https://jj-marinho.github.io/duckposting/demo/)**
+**[Open the sandbox](https://jj-marinho.github.io/duckposting/)** ·
+**[Docs](https://jj-marinho.github.io/duckposting/docs/)**
 
 The token-free sandbox uses the same core with a fake repository. Create, edit,
 delete and recover writing without signing in; Publish changes only the browser.
@@ -109,8 +109,10 @@ CI uploads this candidate; it does not publish to npm. The package remains priva
 until registry publication is explicitly requested. Browser dependencies are
 bundled; builder peers are optional. Licenses ship with the assets.
 
-The project site uses Quartz and the same package at its own `/write`.
-Build it with `npm run build:site`; Markdown docs live in `site/content/docs/`.
+The project homepage is the sandbox itself, with an editable introduction.
+Quartz renders the secondary docs. `/write/` and `/demo/` are sandbox aliases;
+none of these pages can commit to the project repository.
+Build with `npm run build:site`; Markdown docs live in `site/content/docs/`.
 See [the site setup](site/README.md) and [npm release guide](site/content/docs/release.md).
 
 [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [Support](SUPPORT.md) ·

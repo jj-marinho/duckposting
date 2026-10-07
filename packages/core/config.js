@@ -17,6 +17,7 @@ export function configuration(options = {}) {
   if (!['title', 'date-title'].includes(config.filenameFormat)) throw new Error('filenameFormat must be title or date-title.');
   if (typeof config.template !== 'string') throw new Error('The post template must be Markdown text.');
   if (!Array.isArray(config.exclude) || config.exclude.some(pattern => typeof pattern !== 'string' || !pattern)) throw new Error('exclude must be an array of folder names or glob patterns.');
+  if (config.initialPath !== undefined && !contentMatcher(config)(config.initialPath)) throw new Error('initialPath must be an allowed Markdown document inside contentRoot.');
   return config;
 }
 

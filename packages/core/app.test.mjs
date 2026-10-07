@@ -96,6 +96,23 @@ test('initial fetch can be aborted immediately when the writer is removed', asyn
   await destroy(); assert.equal(pendingSignal.aborted, true);
 });
 
+test('initialPath opens the exact document and still offers recovery; missing paths leave the index usable', async () => {
+  const storage = memory(); storage.setItem(prefix + 'token', 'fake');
+  const path = 'notes/posts/a.md';
+  let f = await fixture({ storage, options: { initialPath: path } });
+  try { assert.equal(f.sessions[0].session.path, path); await f.click('#back'); assert.equal(f.root.querySelector('#index').hidden, false); }
+  finally { await f.destroy(); }
+  draftStore(config, storage).save({ id: path, path, sha: 'a', text: text('Recovered') });
+  f = await fixture({ storage, options: { initialPath: path } });
+  try {
+    assert.equal(f.sessions.length, 0); assert.equal(f.root.querySelector('#confirm-dialog').open, true);
+    await f.click('#confirm-yes'); assert.equal(f.sessions[0].session.text, text('Recovered'));
+  } finally { await f.destroy(); }
+  f = await fixture({ storage, options: { initialPath: 'notes/missing.md' } });
+  try { assert.equal(f.sessions.length, 0); assert.equal(f.root.querySelector('#index').hidden, false); }
+  finally { await f.destroy(); }
+});
+
 test('Escape cancels exact-document recovery without loading repository and restores its Edit button', async () => {
   const storage = memory(); storage.setItem(prefix + 'token', 'fake');
   draftStore(config, storage).save({ id: 'notes/posts/a.md', path: 'notes/posts/a.md', sha: 'a', text: text('Keep local A') });

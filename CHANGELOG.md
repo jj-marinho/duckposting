@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.0-alpha.12 — unpublished
+
+- Open the GitHub Pages homepage directly in the sandbox's editable introduction;
+  `/write/` and `/demo/` share the same safe browser-only repository.
+- Complete the sandbox's light and dark palettes, including text, links and Publish.
+- Let browser mounts opt into `initialPath`, preserving exact-document recovery.
+
 ## 0.1.0-alpha.11 — unpublished
 
 - Build the GitHub Pages project site with Quartz and its own duckposting `/write`;

@@ -36,7 +36,9 @@ await cp(join(root, 'site/content'), join(checkout, 'site/content'), { recursive
 await command(process.execPath, ['quartz/bootstrap-cli.mjs', 'build', '--directory', 'site/content', '--output', 'public'], checkout);
 await rm(join(root, 'site/public'), { recursive: true, force: true });
 await cp(join(checkout, 'public'), join(root, 'site/public'), { recursive: true });
-// Keep the safe, fake-repository demo beside the real editor, not in its place.
+// The homepage is the editor itself. These aliases share the same local sandbox.
+await cp(join(root, 'demo'), join(root, 'site/public'), { recursive: true });
+await cp(join(root, 'demo'), join(root, 'site/public/write'), { recursive: true });
 await cp(join(root, 'demo'), join(root, 'site/public/demo'), { recursive: true });
 await writeFile(join(root, 'site/public/.nojekyll'), '');
 console.log(`Built duckposting ${pkg.version}: site/public`);
