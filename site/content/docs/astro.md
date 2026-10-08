@@ -12,7 +12,7 @@ Verified packed-package builds: **Astro 5.18.2, 6.4.8, and 7.3.7**.
 While duckposting is unpublished, install the archive produced by `npm run package` in this repository:
 
 ```sh
-npm install /path/to/duckposting-0.1.0-alpha.11.tgz
+npm install /path/to/duckposting-0.1.0-alpha.13.tgz
 ```
 
 Register the integration in `astro.config.mjs`. It serves the editor assets during development and includes them in the static build:

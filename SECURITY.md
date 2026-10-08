@@ -1,6 +1,6 @@
 # Security
 
-Supported version: the latest alpha release (currently 0.1.0-alpha.1).
+Supported version: the latest alpha release.
 Do not deploy an unreviewed bundle from an
 untrusted source; editor code can read the PAT entered on its origin.
 

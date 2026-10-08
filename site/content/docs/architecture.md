@@ -13,6 +13,8 @@ Duckposting keeps the browser application separate from the site builder. Adapte
 
 The core owns the content list, document metadata, local recovery, Milkdown rich editing, image dialogs, and GitHub requests. GitHub’s Contents API creates or updates one file per commit. Its tree API lists paths without downloading every post body. Lost responses are reconciled against the saved file before another commit.
 
+The Commits API lists file history, scoped by path and branch. Contents reads the chosen commit through `ref`. History previews do not autosave. Restoring keeps the current file's blob SHA, so Publish adds a normal commit containing the older text rather than trying to overwrite with a historical SHA.
+
 Credentials are entered locally. Remembering stores the PAT in localStorage; all scripts on the same origin can access that storage. Only host trusted scripts alongside the editor.
 
 ## Adapters

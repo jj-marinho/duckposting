@@ -80,6 +80,30 @@ test('tree lists all allowed Markdown without fetching contents', async () => {
 test('truncated tree is rejected instead of displaying incomplete content', async () => {
   await assert.rejects(github(config, () => 'token', async () => json({ truncated: true, tree: [] })).list(), /too large/);
 });
+
+test('file history is scoped to path and branch, paginated, and reads commit content without writing', async () => {
+  const calls = [], revision = 'a'.repeat(40), path = 'content/posts/Olá.md';
+  const commit = { sha: revision, commit: { message: 'A title\n\nDetails', committer: { date: '2026-10-01T12:00:00Z' } } };
+  const api = github({ ...config, branch: 'drafts/writing' }, () => 'token', async (url, options) => {
+    calls.push({url,options});
+    return url.includes('/commits?') ? json(new URL(url).searchParams.get('page') === '1' ? Array(30).fill(commit) : []) : json({content:encode('Olá 🦆'),sha:'old-blob'});
+  });
+  const history = await api.history(path);
+  assert.equal(history.more, true); assert.equal(history.commits[0].message, 'A title');
+  assert.equal(new URL(calls[0].url).searchParams.get('path'), path);
+  assert.equal(new URL(calls[0].url).searchParams.get('sha'), 'drafts/writing');
+  assert.equal((await api.history(path,2)).more, false);
+  assert.equal((await api.read(path,revision)).text, 'Olá 🦆');
+  assert.equal(new URL(calls[2].url).searchParams.get('ref'), revision);
+  assert(calls.every(call=>!call.options.method));
+  await assert.rejects(api.history('other/file.md'), /outside/);
+  await assert.rejects(api.history(path,0), /history page/);
+  await assert.rejects(api.read(path,'../branch'), /commit revision/);
+  assert.equal(calls.length, 3);
+  for (const data of [null, {}, [null], [{...commit,sha:'wrong'}], [{...commit,commit:{message:'Title',committer:{date:'invalid'}}}]]) {
+    await assert.rejects(github(config,()=> 'token',async()=>json(data)).history(path),/invalid commit history/);
+  }
+});
 function memory() { const map = new Map(); return { getItem: key => map.get(key) ?? null, setItem: (key, value) => map.set(key, value), removeItem: key => map.delete(key) }; }
 test('drafts are scoped to exact document, repository and branch, and survive reload', () => {
   const storage = memory(), store = draftStore(config, storage);

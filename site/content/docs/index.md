@@ -25,6 +25,6 @@ Anyone can open the writing page. Only an authorized GitHub token can commit. Yo
 
 Choose **+ New Post**, write a title and body, then **Publish**. The first title determines the filename; later title edits keep the existing path. GitHub confirms the save immediately. Hosting updates the public site after its next build.
 
-Choose **Edit** to change existing content. Duckposting offers unfinished local changes for that exact file before opening it. New Post also offers local new-post drafts and committed unpublished posts. **Delete** asks for confirmation.
+Local drafts appear at the top of `/write`, above repository pages, with a faint **Local draft** label. Choose **Edit** to resume one or **Discard draft** to remove its browser copy. **+ New Post** always starts fresh. Existing documents offer recovery for their exact local draft before editing. Repository drafts remain in the content list; **Delete** asks for confirmation.
 
 [Writing, images, and equations](writing.md) · [How the pieces fit](architecture.md) · [Safety and troubleshooting](support.md)

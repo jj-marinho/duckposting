@@ -21,9 +21,10 @@ export function github(config, token, request = fetch, { signal, timeout = 30000
     }
     return raw ? response.blob() : response.status === 204 ? null : response.json();
   }
-  const read = async path => {
+  const read = async (path, revision) => {
     ensurePath(path);
-    const data = await call(`${pathURL(path)}?ref=${encodeURIComponent(config.branch)}`);
+    if (revision !== undefined && !/^[a-f0-9]{40}$/i.test(revision)) throw new Error('Choose a valid commit revision.');
+    const data = await call(`${pathURL(path)}?ref=${encodeURIComponent(revision ?? config.branch)}`);
     if (data.type && data.type !== 'file' || data.encoding && data.encoding !== 'base64' || typeof data.content !== 'string' || typeof data.sha !== 'string') throw new Error('Only Markdown files below GitHub’s inline content limit can be edited.');
     const bytes = Uint8Array.from(atob(data.content.replace(/\s/g, '')), char => char.charCodeAt(0));
     const text = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes);
@@ -73,6 +74,13 @@ export function github(config, token, request = fetch, { signal, timeout = 30000
   }
   return {
     read, readImage, saveImage: (path, bytes) => change(path, bytes, undefined, false, true),
+    async history(path, page = 1) {
+      ensurePath(path);
+      if (!Number.isSafeInteger(page) || page < 1) throw new Error('Choose a valid history page.');
+      const data = await call(`${base}/commits?sha=${encodeURIComponent(config.branch)}&path=${encodeURIComponent(path)}&per_page=30&page=${page}`);
+      if (!Array.isArray(data) || data.some(item => !/^[a-f0-9]{40}$/i.test(item?.sha) || typeof item?.commit?.message !== 'string' || !Number.isFinite(Date.parse(item?.commit?.committer?.date)))) throw new Error('GitHub returned an invalid commit history.');
+      return { commits: data.map(item => ({ sha: item.sha, message: item.commit.message.split(/\r?\n/)[0], date: item.commit.committer.date })), more: data.length === 30 };
+    },
     get imagePaths() { return imagePaths; },
     save: (path, text, sha) => change(path, text, sha),
     remove: (path, sha) => change(path, '', sha, true),

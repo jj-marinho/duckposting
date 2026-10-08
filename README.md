@@ -47,8 +47,13 @@ Contents read/write for that repository. Remember on this device is opt-in.
 - `/write` lists content with New Post, Edit and confirmed Delete.
 - Title, date and body come first. Controls sit below the writing; frontmatter
   stays under Post settings. Title and date stay synchronized with frontmatter.
-- Local recovery is scoped to the exact document. New Post offers both local
-  unfinished posts and repository drafts. Recovery is a choice.
+- Local drafts appear first in `/write`, with a faint Local draft label and
+  Discard draft action. New Post starts fresh; Edit resumes the exact document.
+- Each existing document has one local draft, updated while typing. Edit offers
+  recovery, the repository version, or Discard draft & edit. The version selector
+  below the body shows that draft and the file's GitHub commits. Historical
+  versions are read-only; Use this version restores a local draft to Publish as
+  a new commit. Browsing history does not change the current writing.
 - Publish changes one Markdown file. Draft checked means committed with the adapter’s visibility setting;
   the host must filter drafts. Cloudflare or another host deploys after the GitHub commit.
 - New filenames come from titles, including Unicode letters/numbers. Existing
@@ -77,7 +82,8 @@ Contents read/write for that repository. Remember on this device is opt-in.
 - Source preserves renderer-specific Markdown. Rich mode is CommonMark plus GFM and math, and
   existing source defaults to Markdown if rich serialization would change it.
 
-Local drafts live in one browser/origin. Repository drafts are committed files.
+Local drafts and remembered PATs live in one browser/origin; clearing website
+data removes them. Repository drafts are committed files and remain in GitHub.
 “Draft / unpublished” in the list means absent from the deployed published
 index; it does not prove a frontmatter field. Errors keep writing local.
 

@@ -19,7 +19,7 @@ import { imageURL, imageMarkdown, parseImage } from "./images.js";
 import katex from "katex";
 
 // Host provides the article-shaped root. All controls stay inside this instance.
-export async function mountEditor(root, session, { onChange, onReady, imageSource = async src => imageURL(src), uploadImage, getPages = () => [], config = {} }) {
+export async function mountEditor(root, session, { onChange, onReady, imageSource = async src => imageURL(src), uploadImage, getPages = () => [], config = {}, versionControl, readOnly = false }) {
   root.classList.add("duckposting");
   root.innerHTML = `
     <h1 class="article-title" id="title" contenteditable="plaintext-only" role="textbox" aria-label="Post title" data-placeholder="Your title"></h1>
@@ -29,7 +29,8 @@ export async function mountEditor(root, session, { onChange, onReady, imageSourc
     <textarea id="post" hidden spellcheck="true" aria-describedby="editor-status"></textarea>
     <div class="duck-editor-tools">
       <div class="duck-options">
-        <label class="duck-draft"><input id="draft-status" type="checkbox"> Draft <span class="duck-muted">— hidden from the blog</span></label>
+        <label class="duck-draft"><input id="draft-status" type="checkbox"> Draft</label>
+        <div id="version-slot"></div>
         <div class="duck-insert"><button id="insert" type="button" aria-haspopup="listbox" aria-expanded="false">Insert <span aria-hidden="true">/</span></button>
         <button id="source-toggle" type="button" aria-pressed="false">Markdown</button></div>
       </div>
@@ -61,6 +62,7 @@ export async function mountEditor(root, session, { onChange, onReady, imageSourc
     </dialog>`;
 
   const get = id => root.querySelector(`#${id}`);
+  if (versionControl) get('version-slot').append(versionControl);
   const post = get("post"), title = get("title"), body = get("body"), metadata = get("frontmatter");
   const controller = new AbortController();
   const { signal } = controller;
@@ -347,10 +349,11 @@ export async function mountEditor(root, session, { onChange, onReady, imageSourc
     get("source-toggle").disabled = true;
   }
   initializing = false;
-  busy = false;
+  busy = readOnly;
   post.disabled = metadata.disabled = false;
+  post.readOnly = metadata.readOnly = readOnly;
   get("source-toggle").disabled = !editor;
-  get("insert").disabled = false;
+  get("insert").disabled = readOnly;
   validateFields();
   onReady();
   const destroy = async () => {
@@ -363,13 +366,13 @@ export async function mountEditor(root, session, { onChange, onReady, imageSourc
   };
   if (!root.isConnected) await destroy();
   return { destroy, focus() { if (!source && !title.textContent.trim()) title.focus(); else focus(); }, setBusy(value) {
-    busy = value;
+    busy = value || readOnly;
     if (busy) menu.close();
     for (const control of body.querySelectorAll('input[type=checkbox], .duck-table-tools button, .duck-code-language select')) control.disabled = busy || control.dataset.minimum === 'true';
     title.contentEditable = busy || !fieldsValid ? "false" : "plaintext-only";
-    post.disabled = metadata.disabled = busy;
+    post.disabled = metadata.disabled = value;
     get("draft-status").disabled = get("post-date").disabled = busy || !fieldsValid;
-    get("source-toggle").disabled = busy || !editor;
+    get("source-toggle").disabled = value || !editor;
     get("insert").disabled = busy;
     editor?.action(ctx => ctx.get(editorViewCtx).setProps({ editable: () => !busy }));
   } };

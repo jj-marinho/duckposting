@@ -9,13 +9,18 @@ const text = title => `---\ntitle: "${title}"\ndraft: false\n---\n\nBody`;
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status });
 const settle = async () => { for (let i = 0; i < 6; i++) await new Promise(resolve => setImmediate(resolve)); };
 function memory() { const map = new Map(); return { getItem: key => map.get(key) ?? null, setItem: (key, value) => map.set(key, value), removeItem: key => map.delete(key) }; }
-async function fixture({ storage = memory(), createEditor, deniedRead = false, deniedWrite = false, options = {} } = {}) {
+async function fixture({ storage = memory(), createEditor, deniedRead = false, deniedWrite = false, historyRequest, deniedVersion = false, options = {} } = {}) {
   const { window, document } = parseHTML('<html><body><main id="app"></main></body></html>');
   globalThis.document = document;
   // linkedom has no browser focus manager; record focus transitions explicitly.
   let active = document.body;
   Object.defineProperty(document, 'activeElement', { get: () => active });
   window.HTMLElement.prototype.focus = function () { active = this; };
+  // linkedom exposes a select getter only; model native selection for the UI fixture.
+  Object.defineProperty(window.HTMLSelectElement.prototype, 'value', { configurable: true,
+    get() { return this.querySelector('option[selected]')?.value || this.querySelector('option')?.value || ''; },
+    set(value) { for (const option of this.querySelectorAll('option')) option.selected = option.value === value; },
+  });
   const root = document.querySelector('main');
   const files = new Map(['a', 'b'].map(name => [`notes/posts/${name}.md`, { text: text(name.toUpperCase()), sha: name }]));
   const calls = [];
@@ -23,9 +28,11 @@ async function fixture({ storage = memory(), createEditor, deniedRead = false, d
     calls.push({ url, ...options });
     if (url === '/index.json') return json([...files].map(([path, file]) => ({ path, title: file.text.includes('"A"') ? 'A' : 'B' })));
     if (url.includes('/git/trees/')) return json({ tree: [...files].map(([path, file]) => ({ path, sha: file.sha, type: 'blob' })) });
+    if (new URL(url).pathname.endsWith('/commits')) return historyRequest ? historyRequest(url) : json([{ sha: '1'.repeat(40), commit: { message: 'First version\n\nDetails', committer: { date: '2026-10-01T12:00:00Z' } } }]);
     const path = decodeURIComponent(new URL(url).pathname.split('/contents/')[1]);
     const file = files.get(path);
-    if (!options.method) return deniedRead || !file ? json({}, 404) : json({ content: Buffer.from(file.text).toString('base64'), sha: file.sha });
+    const historical = new URL(url).searchParams.get('ref') === '1'.repeat(40);
+    if (!options.method) return deniedRead || historical && deniedVersion || !file ? json({}, 404) : json({ content: Buffer.from(historical ? text('Older A') : file.text).toString('base64'), sha: historical ? 'historical-blob' : file.sha });
     if (deniedWrite) return json({ message: 'Denied' }, 403);
     const data = JSON.parse(options.body);
     if (options.method === 'DELETE') files.delete(path);
@@ -35,6 +42,7 @@ async function fixture({ storage = memory(), createEditor, deniedRead = false, d
   const sessions = [];
   const fakeEditor = async (node, session, callbacks) => {
     node.textContent = session.text;
+    node.append(callbacks.versionControl);
     sessions.push({ session, callbacks }); callbacks.onReady();
     return { async destroy() {}, setBusy() {}, focus() { node.focus(); } };
   };
@@ -44,7 +52,8 @@ async function fixture({ storage = memory(), createEditor, deniedRead = false, d
   const destroy = await mounted; await settle();
   const click = async selector => { const node = root.querySelector(selector); node.focus(); node.dispatchEvent(new window.Event('click')); await settle(); };
   const cancel = async selector => { root.querySelector(selector).dispatchEvent(new window.Event('cancel', { cancelable: true })); await settle(); };
-  return { root, storage, destroy, click, cancel, document, files, calls, sessions };
+  const selectVersion = async value => { const select = root.querySelector('select[aria-label="Post versions"]'); select.value = value; select.dispatchEvent(new window.Event('change')); await settle(); };
+  return { root, storage, destroy, click, cancel, selectVersion, document, files, calls, sessions };
 }
 test('exact-document recovery offers local changes for A but not B; Publish changes only A', async () => {
   const storage = memory(); storage.setItem(prefix + 'token', 'fake');
@@ -148,19 +157,26 @@ test('Escape cancels Delete, defaults focus to Cancel, and never sends a mutatio
   } finally { await f.destroy(); }
 });
 
-test('draft picker Escape returns to New Post, and editor/back move keyboard focus', async () => {
+test('local new-post drafts appear above pages; New Post starts fresh and Edit resumes the selected draft', async () => {
   const storage = memory(); draftStore(config, storage).save({ id: 'new:one', text: text('Local') });
   const f = await fixture({ storage });
   try {
+    assert.equal(f.root.querySelector('.duck-entry').dataset.path, 'new:one');
+    assert.equal(f.root.querySelector('.duck-draft-label').textContent, 'Local draft');
     await f.click('#new');
-    assert.equal(f.document.activeElement, f.root.querySelector('#choices button'));
-    await f.cancel('#draft-picker');
-    assert.equal(f.root.querySelector('#draft-picker').open, false);
-    assert.equal(f.document.activeElement, f.root.querySelector('#new'));
-    await f.click('#new'); await f.click('#start-new');
+    assert.notEqual(f.sessions.at(-1).session.id, 'new:one');
     assert.equal(f.document.activeElement, f.root.querySelector('#editor'));
     await f.click('#back');
     assert.equal(f.document.activeElement, f.root.querySelector('#new'));
+    await f.click('.duck-entry button');
+    assert.equal(f.sessions.at(-1).session.id, 'new:one');
+    assert.equal(f.sessions.at(-1).session.text, text('Local'));
+    await f.click('#back'); await f.click('.duck-entry button:nth-of-type(2)'); await f.cancel('#confirm-dialog');
+    assert(draftStore(config, storage).drafts['new:one']);
+    await f.click('.duck-entry button:nth-of-type(2)'); await f.click('#confirm-yes');
+    assert.equal(draftStore(config, storage).drafts['new:one'], undefined);
+    assert.equal(f.root.querySelector('.duck-draft-label'), null);
+    assert.equal(f.calls.filter(call => call.method).length, 0);
   } finally { await f.destroy(); }
 });
 
@@ -224,7 +240,6 @@ test('builder URLs survive edits, new links wait for rebuilt routes and native d
     await f.click('#publish');
     assert.match(f.root.querySelector('#status').textContent, /Draft saved/);
     await f.click('#new');
-    await f.click('#start-new');
     const current = f.sessions.at(-1).callbacks;
     current.onChange('---\ntitle: New entry\ndate: 2026-10-07\npublished: true\n---\n\nBody');
     await f.click('#publish');
@@ -251,4 +266,110 @@ test('separate upload roots save one image with public Markdown URLs, keeping lo
     assert.equal(f.calls.filter(call => call.method === 'PUT').length, 1);
     assert.equal(draftStore(config, storage).drafts['notes/posts/a.md'].text, text('Keep writing'));
   } finally { await f.destroy(); }
+});
+
+test('history previews keep the exact draft; restoring uses the current blob SHA and publishes once', async () => {
+  const storage = memory(); storage.setItem(prefix + 'token', 'fake');
+  const path = 'notes/posts/a.md', store = draftStore(config, storage);
+  store.save({ id: path, path, sha: 'a', text: text('My draft') });
+  const f = await fixture({ storage });
+  try {
+    await f.click('.duck-entry button'); await f.click('#confirm-yes');
+    await f.selectVersion('1'.repeat(40));
+    assert.equal(f.sessions.at(-1).callbacks.readOnly, true);
+    assert.equal(f.sessions.at(-1).session.text, text('Older A'));
+    assert.equal(f.root.querySelector('#publish').disabled, true);
+    f.sessions.at(-1).callbacks.onChange(text('Ignored preview edit'));
+    await assert.rejects(f.sessions.at(-1).callbacks.uploadImage(new File(['bytes'], 'photo.png')), /current writing/);
+    assert.equal(draftStore(config, storage).drafts[path].text, text('My draft'));
+    await f.selectVersion('working');
+    assert.equal(f.sessions.at(-1).session.text, text('My draft'));
+    assert.equal(f.root.querySelector('#publish').disabled, false);
+    await f.selectVersion('1'.repeat(40));
+    await f.click('.duck-versions button'); await f.click('#confirm-no');
+    assert.equal(draftStore(config, storage).drafts[path].text, text('My draft'));
+    await f.click('.duck-versions button'); await f.click('#confirm-yes');
+    assert.equal(f.sessions.at(-1).callbacks.readOnly, false);
+    assert.equal(draftStore(config, storage).drafts[path].text, text('Older A'));
+    assert.equal(f.sessions.at(-1).session.sha, 'a');
+    assert.equal(f.files.get(path).text, text('A'));
+    await f.click('#publish');
+    const writes = f.calls.filter(call => call.method === 'PUT');
+    assert.equal(writes.length, 1); assert.equal(JSON.parse(writes[0].body).sha, 'a');
+    assert.equal(f.files.get(path).text, text('Older A'));
+    assert.equal(f.files.get('notes/posts/b.md').text, text('B'));
+  } finally { await f.destroy(); }
+});
+
+test('browsing commits without edits never creates a draft; read failures keep the editor usable', async () => {
+  const storage = memory(); storage.setItem(prefix + 'token', 'fake');
+  let f = await fixture({ storage });
+  try {
+    await f.click('.duck-entry button'); await f.selectVersion('1'.repeat(40)); await f.selectVersion('working');
+    assert.equal(Object.keys(draftStore(config, storage).drafts).length, 0);
+    assert.equal(f.calls.filter(call => call.method).length, 0);
+  } finally { await f.destroy(); }
+  f = await fixture({ storage, deniedVersion: true });
+  try {
+    await f.click('.duck-entry button'); f.sessions.at(-1).callbacks.onChange(text('Kept'));
+    await f.selectVersion('1'.repeat(40));
+    assert.equal(f.root.querySelector('select').value, 'working');
+    assert.equal(f.root.querySelector('#publish').disabled, false);
+    assert.equal(draftStore(config, storage).drafts['notes/posts/a.md'].text, text('Kept'));
+    assert.match(f.root.querySelector('#status').textContent, /Could not open this version/);
+  } finally { await f.destroy(); }
+});
+
+test('repository version keeps a separate local draft available; discard only clears the exact document after a successful read', async () => {
+  const storage = memory(); storage.setItem(prefix + 'token', 'fake');
+  const a = 'notes/posts/a.md', b = 'notes/posts/b.md';
+  const store = draftStore(config, storage);
+  store.save({ id: a, path: a, sha: 'a', text: text('Local A') });
+  store.save({ id: b, path: b, sha: 'b', text: text('Local B') });
+  let f = await fixture({ storage });
+  try {
+    await f.click('.duck-entry[data-path="notes/posts/a.md"] button'); await f.click('#confirm-no');
+    assert.equal(f.sessions.at(-1).session.text, text('A'));
+    assert(f.root.querySelector('option[value="draft"]'));
+    await f.selectVersion('draft'); assert.equal(f.sessions.at(-1).session.text, text('Local A'));
+    await f.click('#back'); await f.click('.duck-entry[data-path="notes/posts/a.md"] button'); await f.click('#confirm-extra');
+    assert.equal(f.sessions.at(-1).session.text, text('A'));
+    assert.equal(draftStore(config, storage).drafts[a], undefined);
+    assert.equal(draftStore(config, storage).drafts[b].text, text('Local B'));
+  } finally { await f.destroy(); }
+  store.save({ id: a, path: a, sha: 'a', text: text('Keep on failure') });
+  f = await fixture({ storage, deniedRead: true });
+  try {
+    await f.click('.duck-entry[data-path="notes/posts/a.md"] button'); await f.click('#confirm-extra');
+    assert.equal(draftStore(config, storage).drafts[a].text, text('Keep on failure'));
+    assert.equal(f.sessions.length, 0);
+  } finally { await f.destroy(); }
+});
+
+test('history pagination is explicit; denied history and late responses cannot replace writing', async () => {
+  const storage = memory(); storage.setItem(prefix + 'token', 'fake');
+  const commit = { sha: '1'.repeat(40), commit: { message: 'First', committer: { date: '2026-10-01T12:00:00Z' } } };
+  let f = await fixture({ storage, historyRequest: url => json(new URL(url).searchParams.get('page') === '1' ? Array.from({length:30}, (_, index) => ({ ...commit, sha: (index + 1).toString(16).padStart(40, '0') })) : [commit]) });
+  try {
+    await f.click('.duck-entry button');
+    assert.equal(f.calls.filter(call => call.url.includes('/commits?')).length, 1);
+    await f.selectVersion('more');
+    assert.equal(f.calls.filter(call => call.url.includes('/commits?')).length, 2);
+    assert.equal(f.root.querySelector('option[value="more"]'), null);
+  } finally { await f.destroy(); }
+  f = await fixture({ storage, historyRequest: () => json({message:'Denied'},403) });
+  try {
+    await f.click('.duck-entry button');
+    assert.match(f.root.querySelector('#status').textContent, /Could not load commit history/);
+    assert.equal(f.root.querySelector('#publish').disabled, false);
+    await f.selectVersion('more');
+    assert.equal(f.calls.filter(call => call.url.includes('/commits?')).length, 2);
+  } finally { await f.destroy(); }
+  let finish;
+  f = await fixture({ storage, historyRequest: () => new Promise(resolve => finish = resolve) });
+  await f.click('.duck-entry button'); await f.click('#back');
+  finish(json([commit])); await settle();
+  assert.equal(f.root.querySelector('#index').hidden, false);
+  assert.equal(f.root.querySelector('#status').textContent, '');
+  await f.destroy();
 });

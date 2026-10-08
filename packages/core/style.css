@@ -30,6 +30,7 @@
 .duckposting .duck-entry { display: flex; align-items: center; gap: .5rem; padding: 1rem 0; border-bottom: 1px solid var(--lightgray, #ddd); }
 .duckposting .duck-entry > div { flex: 1; min-width: 0; }
 .duckposting .duck-entry small { display: block; opacity: .65; overflow-wrap: anywhere; font: 12px/1.6 system-ui, sans-serif; }
+.duckposting .duck-draft-label { margin-inline-start: .6rem; opacity: .65; font: 12px/1.6 system-ui, sans-serif; }
 .duckposting .duck-settings { margin: 0; font: 14px/1.5 system-ui, sans-serif; }
 .duckposting .duck-settings label { display: block; margin: .5rem 0; }
 .duckposting #frontmatter { min-height: 9rem; }
@@ -44,7 +45,13 @@
 .duckposting .duck-editor-tools { border-top: 1px solid var(--lightgray, #ddd); padding-top: 1rem; font: 13px/1.5 system-ui, sans-serif; }
 .duckposting .duck-options, .duckposting .duck-publish-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .75rem; }
 .duckposting .duck-publish-row > .duck-actions { margin-inline-start: auto; }
-.duckposting .duck-options { margin-bottom: .75rem; }
+.duckposting .duck-options { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; margin-bottom: .75rem; }
+.duckposting #version-slot { min-width: 0; text-align: center; }
+.duckposting .duck-versions { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: .4rem; }
+.duckposting .duck-versions select { width: 100%; max-width: 22rem; min-width: 0; padding: .3rem; font: inherit; color: inherit; background: var(--light, #fff); border: 1px solid var(--lightgray, #ddd); border-radius: .25rem; }
+.duckposting .duck-versions select:focus-visible { outline: 2px solid var(--secondary, #36c); outline-offset: 3px; }
+.duckposting .duck-local-notice, .duckposting .duck-token-help { font: 13px/1.6 system-ui, sans-serif; opacity: .75; }
+@media (max-width: 540px) { .duckposting .duck-options { grid-template-columns: auto 1fr; } .duckposting #version-slot { grid-column: 1 / -1; grid-row: 2; } .duckposting .duck-insert { justify-self: end; } }
 .duckposting .duck-draft { display: flex; align-items: center; gap: .35rem; }
 .duckposting .duck-muted { opacity: .6; }
 .duckposting #source-toggle { min-width: 0; border-color: transparent; padding-inline: 0; }

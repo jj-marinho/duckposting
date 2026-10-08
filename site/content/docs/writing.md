@@ -48,6 +48,16 @@ Use **Markdown** for direct source editing. Existing documents open in source mo
 
 ## Drafts
 
-Local recovery stays in one browser and origin. Repository drafts are files committed with your builder’s draft setting. “Draft / unpublished” in the index means absent from the latest deployed published index; it does not prove a particular frontmatter value.
+Each existing document has one local draft, updated as you type. Multiple new-post drafts are separate unfinished posts. Edit offers **Use local draft**, **Use repository version** (keeping the local copy available in the selector), or **Discard draft & edit**. Discard removes only that document's browser draft, after its repository version loads successfully.
+
+Local drafts appear above other pages in `/write`, newest first, with a faint **Local draft** label and a confirmed **Discard draft** action. A page with local changes appears once. **+ New Post** starts a fresh document immediately; resume existing writing with its **Edit** button.
+
+Local recovery and remembered PATs stay in one browser and origin. Clearing website data removes them. Repository drafts are files committed with your builder’s draft setting. “Draft / unpublished” in the index means absent from the latest deployed published index; it does not prove a particular frontmatter value.
 
 A public GitHub repository exposes committed drafts through GitHub even when the site hides them. Publish changes one document at a time.
+
+## Post history
+
+The centered selector below the body shows this document's local draft and GitHub commits, with short commit IDs, messages, and timestamps. History follows the configured branch and exact file path; **Load earlier commits** fetches another page of 30. Renames do not follow the old path automatically.
+
+Selecting a commit is a read-only preview. You can inspect its rich text or Markdown and return to your current writing without changing the draft. **Use this version** restores it into the local working copy, asking before replacing an existing local draft. **Publish** then creates a new commit; it never rewrites Git history. Committed drafts are included in the same history.

@@ -2,7 +2,7 @@
 
 | Symptom | Check |
 | --- | --- |
-| Publish is disabled | Title, body and token are required. Invalid or unclosed YAML must be fixed. The editor must finish loading. |
+| Publish is disabled | Title, body and token are required. Invalid or unclosed YAML must be fixed. The editor must finish loading. History previews are read-only; return to the current version or choose Use this version. |
 | GitHub says 401/403/404 | Token expiry, selected repository, Contents read/write permission, repository name and branch. GitHub may return 404 for inaccessible private repositories. Local writing stays saved. |
 | Branch rejects a commit | Use an existing branch that allows direct commits. Protected-branch and pull-request workflows are not implemented. |
 | Filename already exists | Edit that document, or change the new post's title. Creating never overwrites an existing file. |
@@ -12,6 +12,8 @@
 | Editing opens Markdown | A rich-editor roundtrip would change the source. Source preserves it; choosing Rich explicitly opts into conversion on editing. Some harmless formatting differences also trigger this. |
 | Local recovery warning | Browser storage may be blocked, full or damaged. Copy the source before closing. Damaged draft data is retained under the scoped `drafts:recovery` key when storage permits. |
 | Draft missing on another device | Local recovery belongs to this browser/origin. Publish with Draft checked to save it in the repository. |
+| Draft or remembered PAT disappeared | Clearing website data removes browser storage. GitHub commits are kept. Save the PAT in your password manager and commit drafts you want to keep. |
+| Commit history unavailable | Check the token's repository access and Contents read permission. Use Load commit history to retry; current writing remains usable. |
 | Styling differs from the blog | The rich editor adds `.ProseMirror`. Extend wrapper-sensitive selectors such as `article > p` to `article .ProseMirror > p`. Scoped/theme component rules may need their own adjustment. |
 | New JavaScript does not appear | Rebuild and deploy the site. The Quartz adapter hashes asset URLs; a reload should select the new bundle. |
 | Editor paths fail under a URL prefix | Use the supported Quartz adapter; it distinguishes production baseUrl paths from local `--serve`. Keep content paths repository-relative. |

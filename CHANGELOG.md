@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.0-alpha.13 — unpublished
+
+- Add a centered post-version selector: one local draft per document, followed
+  by paginated GitHub commits with messages and timestamps.
+- Preview older commits without changing the draft; restore explicitly to the
+  working copy and Publish as a new commit using the current file revision.
+- Offer Discard draft & edit in exact-document recovery. Failed repository reads
+  keep the draft. Add browser-storage and repository-scoped PAT reminders.
+- Show local drafts above repository pages with a faint Local draft label and
+  confirmed discard action. New Post starts fresh without a recovery picker.
+- Keep the sandbox history local, using the same API-shaped flow.
+
 ## 0.1.0-alpha.12 — unpublished
 
 - Open the GitHub Pages homepage directly in the sandbox's editable introduction;
